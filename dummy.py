@@ -20,6 +20,6 @@ def get_dataset(n_train=1024, n_valid=1024, n_nodes=5):
     return train_data, valid_data
 
 def _test():
-    t, v = get_dataset(2, 2)
+    t, v = get_dataset(100, 100)
     for d in t.tensors + v.tensors:
         print(d.size())

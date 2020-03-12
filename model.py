@@ -21,10 +21,8 @@ class TwoLayerGCN(nn.Module):
         out = F.softmax(out) 
         return out
 
-A = torch.tensor([[1,0,1,0],[0,1,1,0],[1,1,1,0],[0,0,0,1]], dtype=dtype)
-X = torch.eye(4, dtype=dtype)
-Dim = [[4,10],[10,5]]
+# A = torch.tensor([[1,0,1,0],[0,1,1,0],[1,1,1,0],[0,0,0,1]], dtype=dtype)
+# X = torch.eye(4, dtype=dtype)
 
-model = TwoLayerGCN(Dim)
+# Dim = [[4,10],[10,5]]
 
-print(model.forward(A,X))
