@@ -1,6 +1,6 @@
 import torch
 from torch.utils.data import TensorDataset
-dtype = torch.float
+dtype = torch.long
 
 def Normalize_Adj(A):
     A_tilda = A + torch.eye(A.shape[1]).repeat(A.shape[0], 1, 1)

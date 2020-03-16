@@ -2,8 +2,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-dtype = torch.float
-
 class GraphConvolutionLayer(nn.Module):
   def __init__(self, input_dim, output_dim):
     super().__init__()
@@ -32,5 +30,3 @@ class TwoLayerGCN(nn.Module):
     #print('Output after 2nd GCN layer: ', out.shape)
     #out = F.softmax(out) 
     return out
-
-
