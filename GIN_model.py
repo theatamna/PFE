@@ -63,3 +63,9 @@ class GIN(nn.Module):
         for i in range(1, self.n_gnn_layers-1):
             self.mlp_layers.append(MLP(n_mlp_layers, hidden_dim, hidden_dim, hidden_dim))
             self.batch_norms.append(nn.BatchNorm1d(hidden_dim))
+
+        # prediction layers for MLPs (hidden_dim --> output_dim and input_dim --> output_dim)
+        self.mlp_pred = torch.nn.ModuleList()
+        self.mlp_pred.append(nn.Linear(input_dim, output_dimm))
+        for i in range(1, n_gnn_layers):
+            self.mlp_pred.append(nn.Linear(hidden_dim, output_dim))
