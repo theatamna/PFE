@@ -33,3 +33,30 @@ class MLP(nn.Module):
 # print(model)
 # A = torch.tensor([[1,2,3,4,5],[6,7,8,9,10]], dtype=dtype)
 # print(model.forward(A))
+
+class GIN(nn.Module):
+    # Still needs some work
+    def __init__(self, n_gnn_layers, dim_mlp_layers, learn_eps, dropout):
+        '''
+        dims: a tuple containing the dimension of each layer of the MLP
+            (input_dim, hidden_dim1, ... , output_dim)
+        '''
+        super(GIN, self).__init__()
+        self.n_gnn_layers = n_gnn_layers
+        self.n_mlp_layers = len(dim_mlp_layers)
+        self.learn_eps = learn_eps
+        self.dropout = droupout
+        self.eps = nn.Parameter(torch.zero(self.n_gnn_layers - 1))
+
+
+        # List of MLPs
+        self.mlp_layers = torch.nn.ModuleList()
+
+        # Batchnorms applied to the final layer of each MLP
+        self.batch_norms = torch.nn.ModuleList()
+
+        # input MLP layer
+        self.mlp_layers.append(MLP(dim_mlp_layers[:-1]))
+        for i in range(1, self.n_gnn_layers-1):
+            self.mlp_layers.append(MLP(dim_mlp_layers[1:-1]))
+            self.batch_norms.append(nn.BatchNorm1d(dim_mlp_layers[-1]))

@@ -8,7 +8,7 @@ def Normalize_Adj(A):
     A_hat = D_tilda.bmm(A_tilda).bmm(D_tilda)
     return A_hat
 
-def get_dataset(n_train=65536, n_valid=8192, n_nodes=n_nodes, n_classes=n_classes):
+def get_dataset(n_train=65536, n_valid=8192, n_nodes=5, n_classes=4):
     # Generate random adjacency matrices
     A = torch.randint(2, [n_train + n_valid, n_nodes, n_nodes])
     A = A.to(dtype)

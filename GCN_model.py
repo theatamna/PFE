@@ -13,7 +13,7 @@ class GraphConvolutionLayer(nn.Module):
     return out
 
 class TwoLayerGCN(nn.Module):
-  def __init__(self, input_dim=n_nodes, hidden_dim=hidden_dim, n_classes=n_classes, dropout=dropout):
+  def __init__(self, input_dim=5, hidden_dim=10, n_classes=4, dropout=0.5):
     super().__init__()
     self.gc1 = GraphConvolutionLayer(input_dim, hidden_dim)
     self.gc2 = GraphConvolutionLayer(hidden_dim, n_classes)
