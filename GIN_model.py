@@ -46,7 +46,7 @@ class GIN(nn.Module):
         '''
         super(GIN, self).__init__()
         self.n_gnn_layers = n_gnn_layers
-        self.n_mlp_layers = len(dim_mlp_layers)
+        self.n_mlp_layers = n_mlp_layers
         self.learn_eps = learn_eps
         self.dropout = droupout
         self.eps = nn.Parameter(torch.zero(self.n_gnn_layers - 1))
