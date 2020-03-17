@@ -5,22 +5,26 @@ import torch.nn.functional as F
 dtype = torch.float
 
 class MLP(nn.Module):
-    def __init__(self, dims):
+    def __init__(self, n_layers, input_dim, hidden_dim, output_dim):
         '''
-        dims: a tuple containing the dimension of each layer
-            (input_dim, hidden_dim1, ... , output_dim)
+        n_layers: number of layers in the MLP (without the input layer)
+        input_dim: dimension of input features
+        hidden_dim: dimension of all hidden layers
+        output_dim: number of classes for prediction
         '''
         super(MLP, self).__init__()
-        self.n_layers = len(dims) - 1
+        self.n_layers = n_layers
 
         self.linear_layers = torch.nn.ModuleList()
         self.batch_norms = torch.nn.ModuleList()
 
-        for i in range(1, self.n_layers + 1):
-            self.linear_layers.append(nn.Linear(dims[i-1], dims[i]))
+        self.linear_layers.append(nn.Linear(input_dim, hidden_dim))
+        for i in range(1, self.n_layers - 1):
+            self.linear_layers.append(nn.Linear(hidden_dim, hidden_dim))
+        self.linear_layers.append(nn.Linear(hidden_dim, output_dim))
 
-        for i in range(1, self.n_layers):
-            self.batch_norms.append(nn.BatchNorm1d((dims[i])))
+        for i in range(self.n_layers - 1):
+            self.batch_norms.append(nn.BatchNorm1d((hidden_dim)))
 
     def forward(self, x):
         out = x
@@ -28,15 +32,14 @@ class MLP(nn.Module):
             out = F.relu(self.batch_norms[i](self.linear_layers[i](out)))
         return self.linear_layers[self.n_layers - 1](out)
 
-# dims = (5, 10, 20, 30, 40, 50, 5)
-# model = MLP(dims)
+# model = MLP(5, 5, 10, 4)
 # print(model)
 # A = torch.tensor([[1,2,3,4,5],[6,7,8,9,10]], dtype=dtype)
 # print(model.forward(A))
 
 class GIN(nn.Module):
     # Still needs some work
-    def __init__(self, n_gnn_layers, dim_mlp_layers, learn_eps, dropout):
+    def __init__(self, n_gnn_layers, n_mlp_layers, input_dim, hidden_dim, output_dimm, learn_eps, dropout):
         '''
         dims: a tuple containing the dimension of each layer of the MLP
             (input_dim, hidden_dim1, ... , output_dim)
@@ -56,7 +59,7 @@ class GIN(nn.Module):
         self.batch_norms = torch.nn.ModuleList()
 
         # input MLP layer
-        self.mlp_layers.append(MLP(dim_mlp_layers[:-1]))
+        self.mlp_layers.append(MLP(n_mlp_layers, input_dim, hidden_dim, hidden_dim))
         for i in range(1, self.n_gnn_layers-1):
-            self.mlp_layers.append(MLP(dim_mlp_layers[1:-1]))
-            self.batch_norms.append(nn.BatchNorm1d(dim_mlp_layers[-1]))
+            self.mlp_layers.append(MLP(n_mlp_layers, hidden_dim, hidden_dim, hidden_dim))
+            self.batch_norms.append(nn.BatchNorm1d(hidden_dim))
