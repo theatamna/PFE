@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from dummy import * # for testing purposes
 
 dtype = torch.float
 
@@ -32,11 +33,11 @@ class MLP(nn.Module):
             out = F.relu(self.batch_norms[i](self.linear_layers[i](out)))
         return self.linear_layers[self.n_layers - 1](out)
 
-model = MLP(5, 5, 10, 4)
-print(model)
-A = torch.eye(5).repeat(10, 1, 1)
-print(A.shape)
-print(model.forward(A))
+# model = MLP(5, 5, 10, 4)
+# print(model)
+# A = torch.eye(5).repeat(10, 1, 1)
+# print(A.shape)
+# print(model.forward(A))
 
 class GIN(nn.Module):
     # Still needs some work
@@ -76,19 +77,34 @@ class GIN(nn.Module):
         for i in range(1, n_gnn_layers):
             self.mlp_pred.append(nn.Linear(hidden_dim, output_dim))
 
+    def sum_neighbouring_features(self, batch_graphs, batch_features, layer_num):
+        b_idd = torch.eye(batch_graphs.shape[1]).repeat(batch_graphs.shape[0], 1, 1)
+        if self.learn_eps:
+            # Adding self loops (with epsilon)
+            b_graphs = batch_graphs + batch_idd * (1 + self.eps[layer])
+            input = torch.bmm(b_graphs, batch_features)
+        else:
+            # Adding only self Loops
+            b_graphs = batch_graphs + batch_idd
+            input = torch.bmm(b_graphs, batch_features)
+
+        return output
+
     def forward(self, batch_features, batch_graphs):
         # This is a DRAFT of the forward function
         '''
         '''
-        batch_idd = torch.eye(batch_graphs.shape[1]).repeat(batch_graphs.shape[0], 1, 1)
-        for layer in range(self.n_gnn_layers):
-            if self.learn_eps:
-                out = self.mlp_layers[layer](batch_idd*(1+self.eps[layer])*batch_features)
-                out = F.relu(self.batch_norms[layer](out))
+        # batch_idd = torch.eye(batch_graphs.shape[1]).repeat(batch_graphs.shape[0], 1, 1)
+        # for layer in range(self.n_gnn_layers):
+        #     if self.learn_eps:
+        #         out = self.mlp_layers[layer](batch_idd*(1+self.eps[layer])*batch_features)
+        #         out = F.relu(self.batch_norms[layer](out))
         return out
 # tests
 # model = GIN(5, 6, 5, 10, 4, True, 0.5)
 # print(model)
-# A = torch.eye(5).repeat(10, 1, 1)
-# B = torch.eye(5).repeat(10, 1, 1) * 2
-# print(model.forward(B, A))
+# A = torch.randint(2, [10, 5, 5])
+# A = A.to(dtype)
+# upper_tr = torch.triu(A, diagonal=1)
+# A =  upper_tr + torch.transpose(upper_tr, 1, 2)
+# B = torch.randint(5, [10, 5, 3], dtype=dtype)
