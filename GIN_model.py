@@ -39,7 +39,7 @@ class MLP(nn.Module):
 
 class GIN(nn.Module):
     # Still needs some work
-    def __init__(self, n_gnn_layers, n_mlp_layers, input_dim, hidden_dim, output_dimm, learn_eps, dropout):
+    def __init__(self, n_gnn_layers, n_mlp_layers, input_dim, hidden_dim, output_dim, learn_eps, dropout):
         '''
         n_gnn_layers: number of MLPs in the GNN
         n_mlp_layers: number of layers in the MLP (without the input layer)
@@ -53,8 +53,8 @@ class GIN(nn.Module):
         self.n_gnn_layers = n_gnn_layers
         self.n_mlp_layers = n_mlp_layers
         self.learn_eps = learn_eps
-        self.dropout = droupout
-        self.eps = nn.Parameter(torch.zero(self.n_gnn_layers - 1))
+        self.dropout = dropout
+        self.eps = nn.Parameter(torch.zeros(self.n_gnn_layers - 1))
 
 
         # List of MLPs
@@ -71,10 +71,16 @@ class GIN(nn.Module):
 
         # prediction layers for MLPs (hidden_dim --> output_dim and input_dim --> output_dim)
         self.mlp_pred = torch.nn.ModuleList()
-        self.mlp_pred.append(nn.Linear(input_dim, output_dimm))
+        self.mlp_pred.append(nn.Linear(input_dim, output_dim))
         for i in range(1, n_gnn_layers):
             self.mlp_pred.append(nn.Linear(hidden_dim, output_dim))
 
+
     def forward(self, batch_features, batch_graphs):
+        # This is a draft of the forward function
         '''
         '''
+
+# tests
+# model = GIN(5, 6, 5, 10, 4, True, 0.5)
+# print(model)
