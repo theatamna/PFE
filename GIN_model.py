@@ -56,7 +56,7 @@ class GIN(nn.Module):
         self.n_mlp_layers = n_mlp_layers
         self.learn_eps = learn_eps
         self.dropout = dropout
-        self.eps = nn.Parameter(torch.zeros(self.n_gnn_layers - 1))
+        self.eps = nn.Parameter(torch.zeros(self.n_gnn_layers))
 
 
         # List of MLPs
@@ -67,6 +67,7 @@ class GIN(nn.Module):
 
         # input MLP layer
         self.mlp_layers.append(MLP(n_mlp_layers, input_dim, hidden_dim, hidden_dim))
+        self.batch_norms.append(nn.BatchNorm1d(hidden_dim))
         for i in range(1, self.n_gnn_layers-1):
             self.mlp_layers.append(MLP(n_mlp_layers, hidden_dim, hidden_dim, hidden_dim))
             self.batch_norms.append(nn.BatchNorm1d(hidden_dim))
@@ -81,30 +82,31 @@ class GIN(nn.Module):
         b_idd = torch.eye(batch_graphs.shape[1]).repeat(batch_graphs.shape[0], 1, 1)
         if self.learn_eps:
             # Adding self loops (with epsilon)
-            b_graphs = batch_graphs + batch_idd * (1 + self.eps[layer])
+            b_graphs = batch_graphs + b_idd * (1 + self.eps[layer_num])
             input = torch.bmm(b_graphs, batch_features)
         else:
             # Adding only self Loops
-            b_graphs = batch_graphs + batch_idd
+            b_graphs = batch_graphs + b_idd
             input = torch.bmm(b_graphs, batch_features)
+        return input.reshape(-1, batch_features.shape[2])
 
-        return output
-
-    def forward(self, batch_features, batch_graphs):
+    def forward(self, batch_graphs, batch_features):
         # This is a DRAFT of the forward function
-        '''
-        '''
-        # batch_idd = torch.eye(batch_graphs.shape[1]).repeat(batch_graphs.shape[0], 1, 1)
-        # for layer in range(self.n_gnn_layers):
-        #     if self.learn_eps:
-        #         out = self.mlp_layers[layer](batch_idd*(1+self.eps[layer])*batch_features)
-        #         out = F.relu(self.batch_norms[layer](out))
-        return out
-# tests
-# model = GIN(5, 6, 5, 10, 4, True, 0.5)
-# print(model)
-# A = torch.randint(2, [10, 5, 5])
-# A = A.to(dtype)
-# upper_tr = torch.triu(A, diagonal=1)
-# A =  upper_tr + torch.transpose(upper_tr, 1, 2)
-# B = torch.randint(5, [10, 5, 3], dtype=dtype)
+        inter_out = batch_features
+        for layer in range(self.n_gnn_layers-1):
+            input = self.sum_neighbouring_features(batch_graphs, inter_out, layer)
+            out = self.mlp_layers[layer](input)
+            inter_out = F.relu(self.batch_norms[layer](out)).reshape(batch_graphs.shape[0], batch_graphs.shape[1], -1)
+        # last layer (the one without batch_norm)
+        input = self.sum_neighbouring_features(batch_graphs, inter_out, self.n_gnn_layers-1)
+        out = self.mlp_layers[-1](input)
+        inter_out = F.relu(out).reshape(batch_graphs.shape[0], batch_graphs.shape[1], -1)
+        return inter_out
+
+
+model = GIN(5, 6, 3, 10, 4, True, 0.5)
+A = torch.randint(2, [10, 5, 5])
+A = A.to(dtype)
+upper_tr = torch.triu(A, diagonal=1)
+A =  upper_tr + torch.transpose(upper_tr, 1, 2)
+B = torch.randint(5, [10, 5, 3], dtype=dtype)
