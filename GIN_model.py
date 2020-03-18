@@ -32,10 +32,11 @@ class MLP(nn.Module):
             out = F.relu(self.batch_norms[i](self.linear_layers[i](out)))
         return self.linear_layers[self.n_layers - 1](out)
 
-# model = MLP(5, 5, 10, 4)
-# print(model)
-# A = torch.tensor([[1,2,3,4,5],[6,7,8,9,10]], dtype=dtype)
-# print(model.forward(A))
+model = MLP(5, 5, 10, 4)
+print(model)
+A = torch.eye(5).repeat(10, 1, 1)
+print(A.shape)
+print(model.forward(A))
 
 class GIN(nn.Module):
     # Still needs some work
@@ -75,12 +76,19 @@ class GIN(nn.Module):
         for i in range(1, n_gnn_layers):
             self.mlp_pred.append(nn.Linear(hidden_dim, output_dim))
 
-
     def forward(self, batch_features, batch_graphs):
-        # This is a draft of the forward function
+        # This is a DRAFT of the forward function
         '''
         '''
-
+        batch_idd = torch.eye(batch_graphs.shape[1]).repeat(batch_graphs.shape[0], 1, 1)
+        for layer in range(self.n_gnn_layers):
+            if self.learn_eps:
+                out = self.mlp_layers[layer](batch_idd*(1+self.eps[layer])*batch_features)
+                out = F.relu(self.batch_norms[layer](out))
+        return out
 # tests
 # model = GIN(5, 6, 5, 10, 4, True, 0.5)
 # print(model)
+# A = torch.eye(5).repeat(10, 1, 1)
+# B = torch.eye(5).repeat(10, 1, 1) * 2
+# print(model.forward(B, A))
