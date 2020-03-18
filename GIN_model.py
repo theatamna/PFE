@@ -41,8 +41,13 @@ class GIN(nn.Module):
     # Still needs some work
     def __init__(self, n_gnn_layers, n_mlp_layers, input_dim, hidden_dim, output_dimm, learn_eps, dropout):
         '''
-        dims: a tuple containing the dimension of each layer of the MLP
-            (input_dim, hidden_dim1, ... , output_dim)
+        n_gnn_layers: number of MLPs in the GNN
+        n_mlp_layers: number of layers in the MLP (without the input layer)
+        input_dim: dimension of input features of the first MLP
+        hidden_dim: dimension of all hidden layers of the MLPs
+        output_dim: number of classes for prediction of the last MLP
+        learn_eps: whether epsilon is fixed beforehand or we learn epsilon by gradient descent
+        dropout: dropout rate
         '''
         super(GIN, self).__init__()
         self.n_gnn_layers = n_gnn_layers
@@ -69,3 +74,7 @@ class GIN(nn.Module):
         self.mlp_pred.append(nn.Linear(input_dim, output_dimm))
         for i in range(1, n_gnn_layers):
             self.mlp_pred.append(nn.Linear(hidden_dim, output_dim))
+
+    def forward(self, batch_features, batch_graphs):
+        '''
+        '''
