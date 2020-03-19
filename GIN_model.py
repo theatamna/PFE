@@ -46,7 +46,7 @@ class GIN(nn.Module):
         learn_eps: whether epsilon is fixed beforehand or we learn epsilon by gradient descent
         dropout: dropout rate
         '''
-        super(GIN, self).__init__()
+        super().__init__()
         self.n_gnn_layers = n_gnn_layers
         self.n_mlp_layers = n_mlp_layers
         self.learn_eps = learn_eps
@@ -101,9 +101,16 @@ class GIN(nn.Module):
             inter_out = F.relu(self.batch_norms[layer](out)).reshape(batch_graphs.shape[0], batch_graphs.shape[1], -1)
         # last layer (the one without batch_norm)
         input = self.sum_neighbouring_features(batch_graphs, inter_out, self.n_gnn_layers-1)
-        layer_scores[layer,:,:] = (F.dropout(self.mlp_pred[self.n_gnn_layers-1](input), self.dropout))
+        layer_scores[self.n_gnn_layers-1,:,:] = (F.dropout(self.mlp_pred[self.n_gnn_layers-1](input), self.dropout))
         out = self.mlp_layers[-1](input)
         inter_out = F.relu(out).reshape(batch_graphs.shape[0], batch_graphs.shape[1], -1)
+
+        # Readout (sum) and concat.
+        layer_scores = layer_scores.reshape(self.n_gnn_layers, batch_graphs.shape[0], batch_graphs.shape[1], self.output_dim)
+        layer_scores = torch.sum(layer_scores, 2)
+        layer_scores = layer_scores.transpose(1, 2)
+        layer_scores = layer_scores.reshape(-1, batch_graphs.shape[0])
+        layer_scores = layer_scores.transpose(0, 1)
 
         return layer_scores
 
