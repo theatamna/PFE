@@ -33,11 +33,6 @@ class MLP(nn.Module):
             out = F.relu(self.batch_norms[i](self.linear_layers[i](out)))
         return self.linear_layers[self.n_layers - 1](out)
 
-# model = MLP(5, 5, 10, 4)
-# print(model)
-# A = torch.eye(5).repeat(10, 1, 1)
-# print(A.shape)
-# print(model.forward(A))
 
 class GIN(nn.Module):
     # Still needs some work
@@ -56,6 +51,7 @@ class GIN(nn.Module):
         self.n_mlp_layers = n_mlp_layers
         self.learn_eps = learn_eps
         self.dropout = dropout
+        self.output_dim = output_dim
         self.eps = nn.Parameter(torch.zeros(self.n_gnn_layers))
 
 
@@ -93,15 +89,23 @@ class GIN(nn.Module):
     def forward(self, batch_graphs, batch_features):
         # This is a DRAFT of the forward function
         inter_out = batch_features
+        layer_scores = torch.empty((self.n_gnn_layers,
+                                    batch_graphs.shape[0]*batch_graphs.shape[1],
+                                    self.output_dim))
         for layer in range(self.n_gnn_layers-1):
             input = self.sum_neighbouring_features(batch_graphs, inter_out, layer)
+            # intermediate layers' outputs
+            layer_scores[layer,:,:] = F.dropout(self.mlp_pred[layer](input), self.dropout)
+            #
             out = self.mlp_layers[layer](input)
             inter_out = F.relu(self.batch_norms[layer](out)).reshape(batch_graphs.shape[0], batch_graphs.shape[1], -1)
         # last layer (the one without batch_norm)
         input = self.sum_neighbouring_features(batch_graphs, inter_out, self.n_gnn_layers-1)
+        layer_scores[layer,:,:] = (F.dropout(self.mlp_pred[self.n_gnn_layers-1](input), self.dropout))
         out = self.mlp_layers[-1](input)
         inter_out = F.relu(out).reshape(batch_graphs.shape[0], batch_graphs.shape[1], -1)
-        return inter_out
+
+        return layer_scores
 
 
 model = GIN(5, 6, 3, 10, 4, True, 0.5)
