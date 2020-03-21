@@ -34,7 +34,6 @@ class MLP(nn.Module):
 
 
 class GIN(nn.Module):
-    # Still needs some work
     def __init__(self, n_gnn_layers, n_mlp_layers, input_dim, hidden_dim, output_dim, learn_eps, dropout):
         '''
         n_gnn_layers: number of MLPs in the GNN
@@ -59,14 +58,14 @@ class GIN(nn.Module):
         # Batchnorms applied to the final layer of each MLP
         self.batch_norms = torch.nn.ModuleList()
 
-        # input MLP layer
+        # Input MLP layer
         self.mlp_layers.append(MLP(n_mlp_layers, input_dim, hidden_dim, hidden_dim))
         self.batch_norms.append(nn.BatchNorm1d(hidden_dim))
         for i in range(1, self.n_gnn_layers-1):
             self.mlp_layers.append(MLP(n_mlp_layers, hidden_dim, hidden_dim, hidden_dim))
             self.batch_norms.append(nn.BatchNorm1d(hidden_dim))
 
-        # prediction layers for MLPs (hidden_dim --> output_dim and input_dim --> output_dim)
+        # Prediction layers for MLPs (hidden_dim --> output_dim and input_dim --> output_dim)
         self.mlp_pred = torch.nn.ModuleList()
         self.mlp_pred.append(nn.Linear(input_dim, output_dim))
         for i in range(1, n_gnn_layers):
@@ -85,7 +84,7 @@ class GIN(nn.Module):
         return input.reshape(-1, batch_features.shape[2])
 
     def forward(self, batch_graphs, batch_features):
-        # This is a DRAFT of the forward function
+        # This is a draft of the forward function
         inter_out = batch_features
         layer_scores = torch.empty((self.n_gnn_layers,
                                     batch_graphs.shape[0]*batch_graphs.shape[1],
@@ -93,12 +92,12 @@ class GIN(nn.Module):
         for layer in range(self.n_gnn_layers-1):
             input = self.sum_neighbouring_features(batch_graphs, inter_out, layer)
 
-            # intermediate layers' outputs
+            # Intermediate layers' outputs
             layer_scores[layer,:,:] = F.dropout(self.mlp_pred[layer](input), self.dropout)
             out = self.mlp_layers[layer](input)
             inter_out = F.relu(self.batch_norms[layer](out)).reshape(batch_graphs.shape[0], batch_graphs.shape[1], -1)
 
-        # last layer (the one without batch_norm)
+        # Last layer (the one without batch_norm)
         input = self.sum_neighbouring_features(batch_graphs, inter_out, self.n_gnn_layers-1)
         layer_scores[self.n_gnn_layers-1,:,:] = (F.dropout(self.mlp_pred[self.n_gnn_layers-1](input), self.dropout))
         out = self.mlp_layers[-1](input)
@@ -106,12 +105,13 @@ class GIN(nn.Module):
 
         # Readout (sum) and concat.
         layer_scores = layer_scores.reshape(self.n_gnn_layers, batch_graphs.shape[0], batch_graphs.shape[1], self.output_dim)
+        node_scores = layer_scores[self.n_gnn_layers-1, :, :, :] # Added this line, returns vector of scores for each node, just like GCN
         layer_scores = torch.sum(layer_scores, 2)
         layer_scores = layer_scores.transpose(1, 2)
         layer_scores = layer_scores.reshape(-1, batch_graphs.shape[0])
         layer_scores = layer_scores.transpose(0, 1)
 
-        return layer_scores
+        return layer_scores, node_scores
 
 
 # model = GIN(5, 6, 3, 10, 4, True, 0.5)
@@ -120,4 +120,5 @@ class GIN(nn.Module):
 # upper_tr = torch.triu(A, diagonal=1)
 # A =  upper_tr + torch.transpose(upper_tr, 1, 2)
 # B = torch.randint(5, [10, 5, 3], dtype=dtype)
-# print(model.forward(A,B).shape)
+# _, out = model.forward(A,B)
+# print(out.shape)
