@@ -1,7 +1,6 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from dummy import * # for testing purposes
 
 dtype = torch.float
 
@@ -54,7 +53,6 @@ class GIN(nn.Module):
         self.output_dim = output_dim
         self.eps = nn.Parameter(torch.zeros(self.n_gnn_layers))
 
-
         # List of MLPs
         self.mlp_layers = torch.nn.ModuleList()
 
@@ -94,11 +92,12 @@ class GIN(nn.Module):
                                     self.output_dim))
         for layer in range(self.n_gnn_layers-1):
             input = self.sum_neighbouring_features(batch_graphs, inter_out, layer)
+
             # intermediate layers' outputs
             layer_scores[layer,:,:] = F.dropout(self.mlp_pred[layer](input), self.dropout)
-            #
             out = self.mlp_layers[layer](input)
             inter_out = F.relu(self.batch_norms[layer](out)).reshape(batch_graphs.shape[0], batch_graphs.shape[1], -1)
+
         # last layer (the one without batch_norm)
         input = self.sum_neighbouring_features(batch_graphs, inter_out, self.n_gnn_layers-1)
         layer_scores[self.n_gnn_layers-1,:,:] = (F.dropout(self.mlp_pred[self.n_gnn_layers-1](input), self.dropout))
