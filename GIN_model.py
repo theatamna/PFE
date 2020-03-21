@@ -115,10 +115,10 @@ class GIN(nn.Module):
         return layer_scores
 
 
-model = GIN(5, 6, 3, 10, 4, True, 0.5)
-A = torch.randint(2, [10, 5, 5])
-A = A.to(dtype)
-upper_tr = torch.triu(A, diagonal=1)
-A =  upper_tr + torch.transpose(upper_tr, 1, 2)
-B = torch.randint(5, [10, 5, 3], dtype=dtype)
-print(model.forward(A,B).shape)
+# model = GIN(5, 6, 3, 10, 4, True, 0.5)
+# A = torch.randint(2, [10, 5, 5])
+# A = A.to(dtype)
+# upper_tr = torch.triu(A, diagonal=1)
+# A =  upper_tr + torch.transpose(upper_tr, 1, 2)
+# B = torch.randint(5, [10, 5, 3], dtype=dtype)
+# print(model.forward(A,B).shape)
