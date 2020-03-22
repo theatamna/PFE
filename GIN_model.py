@@ -99,8 +99,6 @@ class GIN(nn.Module):
         # Last layer (the one without batch_norm)
         input = self.sum_neighbouring_features(batch_graphs, inter_out, self.n_gnn_layers-1)
         layer_scores[self.n_gnn_layers-1,:,:] = (F.dropout(self.mlp_pred[self.n_gnn_layers-1](input), self.dropout))
-        out = self.mlp_layers[-1](input)
-        inter_out = F.relu(out).reshape(batch_graphs.shape[0], batch_graphs.shape[1], -1)
 
         # Readout (sum) and concat.
         layer_scores = layer_scores.reshape(self.n_gnn_layers, batch_graphs.shape[0], batch_graphs.shape[1], self.output_dim)
