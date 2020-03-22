@@ -15,7 +15,7 @@ class GraphConvolutionLayer(nn.Module):
     torch.nn.init.xavier_uniform_(self.fc.weight)
   def forward(self, X, A):
     out = self.fc(X)
-    out = torch.bmm(A, out)  
+    out = torch.bmm(A, out)
     return out
 
 class TwoLayerGCN(nn.Module):
@@ -26,13 +26,11 @@ class TwoLayerGCN(nn.Module):
     self.dropout = dropout
 
   def forward(self, X, A):
-    X = X.repeat(A.shape[0], 1, 1)
-    #print('X: ', X.shape)
     out = self.gc1(X, Normalize_Adj(A))
     #print('Output after 1st GCN layer: ', out.shape)
     out = F.relu(out)
     out = F.dropout(out, self.dropout)
     out = self.gc2(out, Normalize_Adj(A))
     #print('Output after 2nd GCN layer: ', out.shape)
-    #out = F.softmax(out) 
+    #out = F.softmax(out)
     return out
