@@ -91,7 +91,6 @@ class GIN(nn.Module):
                                     self.output_dim))
         for layer in range(self.n_gnn_layers-1):
             input = self.sum_neighbouring_features(batch_graphs, inter_out, layer)
-
             # Intermediate layers' outputs
             layer_scores[layer,:,:] = F.dropout(self.mlp_pred[layer](input), self.dropout)
             out = self.mlp_layers[layer](input)
