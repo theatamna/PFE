@@ -34,3 +34,4 @@ class TwoLayerGCN(nn.Module):
     #print('Output after 2nd GCN layer: ', out.shape)
     #out = F.softmax(out)
     return out
+# test
