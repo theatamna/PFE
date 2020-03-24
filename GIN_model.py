@@ -32,6 +32,24 @@ class MLP(nn.Module):
             out = F.relu(self.batch_norms[i](self.linear_layers[i](out)))
         return self.linear_layers[self.n_layers - 1](out)
 
+class attention_layer(nn.Module):
+    def __init__(self, in_features, out_features, alpha, dropout):
+        super(attention_layer, self)
+        self.in_features = in_features
+        self.out_features = out_features
+        self.alpha = alpha
+
+        gain = torch.nn.init.calculate_gain('leaky_relu', alpha)
+
+        self.a = nn.Parameter(torch.zeros((2*out_features, 1)))
+        nn.init.xavier_uniform_(self.a.data, gain=gain))
+
+        self.LeakyRelu = nn.LeakyReLU(self, alpha)
+
+    def forward(self):
+        pass
+
+
 
 class GIN(nn.Module):
     def __init__(self, n_gnn_layers, n_mlp_layers, input_dim, hidden_dim, output_dim, learn_eps, dropout):
