@@ -47,19 +47,19 @@ class attention_layer(nn.Module):
 
         self.LeakyRelu = nn.LeakyReLU(self, alpha)
 
-    def node_neighbors_features(self, graph, features):
+    def node_neighbors_features(self, batch_graphs, batch_features):
         '''
-        graph: the adjacency matrix (tensor)
-        features: features of each node (tensor)
+        batch_graph: batch of adjacency matrices (tensor)
+        batch_features: features of each node in every graph(tensor)
 
-        returns: concatinated neighboring features for each node in a graph
-                 (tuple of tensors)
+        returns: concatinated neighboring features for each node (tuple of tensors)
         '''
-        # TODO: Make it work on batches
-        n_features = features.repeat(graph.shape[1], 1, 1)
-        degrees = tuple(graph.sum(dim=1).tolist())
-        temp = n_features[graph==1]
-        concat_features = torch.split(temp, degrees)
+        # could be better (probably)
+        n_features = torch.unsqueeze(batch_features, 1)
+        n_features = n_features.repeat(1, batch_graphs.shape[1], 1, 1)
+        degrees = A.sum(dim=2).flatten()
+        temp = n_features[batch_graphs==1]
+        concat_features = torch.split(temp, tuple(degrees))
         return concat_features
 
     def forward(self):
