@@ -33,8 +33,9 @@ class MLP(nn.Module):
         return self.linear_layers[self.n_layers - 1](out)
 
 class attention_layer(nn.Module):
+    # THIS IS A DRAFT
     def __init__(self, in_features, out_features, alpha, dropout):
-        super(attention_layer, self)
+        super(attention_layer, self).__init__()
         self.in_features = in_features
         self.out_features = out_features
         self.alpha = alpha
@@ -42,14 +43,27 @@ class attention_layer(nn.Module):
         gain = torch.nn.init.calculate_gain('leaky_relu', alpha)
 
         self.a = nn.Parameter(torch.zeros((2*out_features, 1)))
-        nn.init.xavier_uniform_(self.a.data, gain=gain))
+        nn.init.xavier_uniform_(self.a.data, gain=gain)
 
         self.LeakyRelu = nn.LeakyReLU(self, alpha)
 
+    def node_neighbors_features(self, graph, features):
+        '''
+        graph: the adjacency matrix (tensor)
+        features: features of each node (tensor)
+
+        returns: concatinated neighboring features for each node in a graph
+                 (tuple of tensors)
+        '''
+        # TODO: Make it work on batches
+        n_features = features.repeat(graph.shape[1], 1, 1)
+        degrees = tuple(graph.sum(dim=1).tolist())
+        temp = n_features[graph==1]
+        concat_features = torch.split(temp, degrees)
+        return concat_features
+
     def forward(self):
         pass
-
-
 
 class GIN(nn.Module):
     def __init__(self, n_gnn_layers, n_mlp_layers, input_dim, hidden_dim, output_dim, learn_eps, dropout):
