@@ -46,11 +46,11 @@ class attention_layer(nn.Module):
         self.a = nn.Parameter(torch.zeros((2*out_features, 1)))
         nn.init.xavier_uniform_(self.a.data, gain=gain)
 
-        self.LeakyRelu = nn.LeakyReLU(self, alpha)
+        self.LeakyRelu = nn.LeakyReLU(alpha)
 
     def node_neighbors_features(self, batch_graphs, batch_features):
         '''
-        batch_graph: batch of adjacency matrices (tensor)
+        batch_graphs: batch of adjacency matrices (tensor)
         batch_features: features of each node in every graph(tensor)
 
         returns: concatinated neighboring features for each node (tuple of tensors)
@@ -65,8 +65,10 @@ class attention_layer(nn.Module):
         concat_features = torch.cat((feat, temp), dim=1)
         return concat_features
 
-    def forward(self):
-        pass
+    def forward(self, batch_graphs, batch_features):
+        concat_features = self.node_neighbors_features(batch_graphs, batch_features)
+        scores = self.LeakyRelu(torch.mm(concat_features, self.a))
+        return scores
 
 class GIN(nn.Module):
     def __init__(self, n_gnn_layers, n_mlp_layers, input_dim, hidden_dim, output_dim, learn_eps, dropout):
