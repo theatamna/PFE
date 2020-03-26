@@ -1,7 +1,6 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import numpy as np
 
 dtype = torch.float
 
@@ -43,6 +42,7 @@ class attention_layer(nn.Module):
 
         gain = torch.nn.init.calculate_gain('leaky_relu', alpha)
 
+        self.fc = nn.Linear(in_features, out_features, bias=False) # First linear transformation
         self.a = nn.Parameter(torch.zeros((2*out_features, 1)))
         nn.init.xavier_uniform_(self.a.data, gain=gain)
 
@@ -61,12 +61,20 @@ class attention_layer(nn.Module):
         degrees = batch_graphs.sum(dim=2).flatten()
         temp = n_features[batch_graphs==1]
         feat = batch_features.reshape(batch_features.shape[0]*batch_features.shape[1], -1)
-        feat = np.repeat(feat, degrees, axis=0)
+        feat = torch.repeat_interleave(feat, degrees.to(torch.long), dim=0)
         concat_features = torch.cat((feat, temp), dim=1)
         return concat_features
 
     def forward(self, batch_graphs, batch_features):
-        concat_features = self.node_neighbors_features(batch_graphs, batch_features)
+        # Reshape features to pass them to linear layer
+        mod_features = batch_features.reshape(batch_features.shape[0]*batch_features.shape[1], -1)
+
+        # Linear transformation (dimension of features: in_features --> out_features)
+        mod_features = self.fc(mod_features) 
+
+        # Back to the original batched shape
+        mod_features = mod_features.reshape(batch_features.shape[0], batch_features.shape[1], -1)
+        concat_features = self.node_neighbors_features(batch_graphs, mod_features)
         scores = self.LeakyRelu(torch.mm(concat_features, self.a))
         return scores
 
@@ -121,7 +129,6 @@ class GIN(nn.Module):
         return input.reshape(-1, batch_features.shape[2])
 
     def forward(self, batch_graphs, batch_features):
-        # This is a draft of the forward function
         inter_out = batch_features
         layer_scores = torch.empty((self.n_gnn_layers,
                                     batch_graphs.shape[0]*batch_graphs.shape[1],
