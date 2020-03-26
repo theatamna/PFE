@@ -51,9 +51,9 @@ class attention_layer(nn.Module):
     def node_neighbors_features(self, batch_graphs, batch_features):
         '''
         batch_graphs: batch of adjacency matrices (tensor)
-        batch_features: features of each node in every graph(tensor)
+        batch_features: features of each node in every graph (tensor)
 
-        returns: concatinated neighboring features for each node (tuple of tensors)
+        returns: concatenated neighboring features for each node (tuple of tensors)
         '''
         # could be better (probably)
         n_features = torch.unsqueeze(batch_features, 1)
@@ -70,12 +70,18 @@ class attention_layer(nn.Module):
         mod_features = batch_features.reshape(batch_features.shape[0]*batch_features.shape[1], -1)
 
         # Linear transformation (dimension of features: in_features --> out_features)
-        mod_features = self.fc(mod_features) 
+        mod_features = self.fc(mod_features)
 
         # Back to the original batched shape
         mod_features = mod_features.reshape(batch_features.shape[0], batch_features.shape[1], -1)
+
         concat_features = self.node_neighbors_features(batch_graphs, mod_features)
         scores = self.LeakyRelu(torch.mm(concat_features, self.a))
+
+        # Split the output: each chunk contains attention coefficients for a single node
+        degrees = batch_graphs.sum(dim=2).flatten()
+        scores = torch.split(scores, split_size_or_sections=degrees.tolist(), dim=0)
+        # scores = torch.transpose(scores, 1, 2) # Not sure if this line works, haven't tested yet
         return scores
 
 class GIN(nn.Module):
