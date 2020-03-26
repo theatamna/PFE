@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import numpy as np
 
 dtype = torch.float
 
@@ -57,9 +58,11 @@ class attention_layer(nn.Module):
         # could be better (probably)
         n_features = torch.unsqueeze(batch_features, 1)
         n_features = n_features.repeat(1, batch_graphs.shape[1], 1, 1)
-        degrees = A.sum(dim=2).flatten()
+        degrees = batch_graphs.sum(dim=2).flatten()
         temp = n_features[batch_graphs==1]
-        concat_features = torch.split(temp, tuple(degrees))
+        feat = batch_features.reshape(batch_features.shape[0]*batch_features.shape[1], -1)
+        feat = np.repeat(feat, degrees, axis=0)
+        concat_features = torch.cat((feat, temp), dim=1)
         return concat_features
 
     def forward(self):
