@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torch.nn.utils.rnn import pad_sequence
 
 dtype = torch.float
 
@@ -58,7 +59,7 @@ class attention_layer(nn.Module):
         # could be better (probably)
         n_features = torch.unsqueeze(batch_features, 1)
         n_features = n_features.repeat(1, batch_graphs.shape[1], 1, 1)
-        degrees = batch_graphs.sum(dim=2).flatten()
+        degrees = batch_graphs.sum(dim=2).flatten().to(torch.int)
         temp = n_features[batch_graphs==1]
         feat = batch_features.reshape(batch_features.shape[0]*batch_features.shape[1], -1)
         feat = torch.repeat_interleave(feat, degrees.to(torch.long), dim=0)
@@ -79,10 +80,16 @@ class attention_layer(nn.Module):
         scores = self.LeakyRelu(torch.mm(concat_features, self.a))
 
         # Split the output: each chunk contains attention coefficients for a single node
-        degrees = batch_graphs.sum(dim=2).flatten()
+        degrees = batch_graphs.sum(dim=2).flatten().to(torch.int)
         scores = torch.split(scores, split_size_or_sections=degrees.tolist(), dim=0)
         # scores = torch.transpose(scores, 1, 2) # Not sure if this line works, haven't tested yet
-        return scores
+        scores = pad_sequence(scores, batch_first=True, padding_value=-9e15)
+        scores = F.softmax(scores).flatten()
+        scores = scores[scores>0]
+        mask = batch_graphs.to(torch.bool)
+        att_mat = torch.zeros_like(batch_graphs, dtype=dtype)
+        att_mat.masked_scatter_(mask, scores)
+        return att_mat
 
 class GIN(nn.Module):
     def __init__(self, n_gnn_layers, n_mlp_layers, input_dim, hidden_dim, output_dim, learn_eps, dropout):
