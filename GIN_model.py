@@ -67,6 +67,7 @@ class attention_layer(nn.Module):
         return concat_features
 
     def forward(self, batch_graphs, batch_features):
+        batch_size, n_nodes, _ = batch_graphs.shape
         # Reshape features to pass them to linear layer
         mod_features = batch_features.reshape(batch_features.shape[0]*batch_features.shape[1], -1)
 
@@ -86,10 +87,12 @@ class attention_layer(nn.Module):
         scores = pad_sequence(scores, batch_first=True, padding_value=-9e15)
         scores = F.softmax(scores).flatten()
         scores = scores[scores>0]
-        mask = batch_graphs.to(torch.bool)
-        att_mat = torch.zeros_like(batch_graphs, dtype=dtype)
-        att_mat.masked_scatter_(mask, scores)
-        return att_mat
+        out = scores.unsqueeze(1)*concat_features[:,self.out_features:]
+        out = pad_sequence(torch.split(out, degrees.tolist(), dim=0),
+                                        batch_first=True,
+                                        padding_value=0)
+        out = torch.sum(out, dim=1)
+        return out.reshape(batch_size, n_nodes, -1)
 
 class GIN(nn.Module):
     def __init__(self, n_gnn_layers, n_mlp_layers, input_dim, hidden_dim, output_dim, learn_eps, dropout):
