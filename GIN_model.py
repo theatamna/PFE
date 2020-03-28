@@ -35,11 +35,12 @@ class MLP(nn.Module):
 
 class attention_layer(nn.Module):
     # THIS IS A DRAFT
-    def __init__(self, in_features, out_features, alpha, dropout):
+    def __init__(self, in_features, out_features, alpha, dropout, non_lin=False):
         super(attention_layer, self).__init__()
         self.in_features = in_features
         self.out_features = out_features
         self.alpha = alpha
+        self.non_lin = non_lin
 
         gain = torch.nn.init.calculate_gain('leaky_relu', alpha)
 
@@ -92,7 +93,10 @@ class attention_layer(nn.Module):
                                         batch_first=True,
                                         padding_value=0)
         out = torch.sum(out, dim=1)
-        return out.reshape(batch_size, n_nodes, -1)
+        out = out.reshape(batch_size, n_nodes, -1)
+        if self.non_lin != False:
+            out = self.non_lin(out)
+        return out
 
 class GIN(nn.Module):
     def __init__(self, n_gnn_layers, n_mlp_layers, input_dim, hidden_dim, output_dim, learn_eps, dropout):
