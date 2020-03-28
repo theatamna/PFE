@@ -35,11 +35,12 @@ class MLP(nn.Module):
 
 class attention_layer(nn.Module):
     # THIS IS A DRAFT
-    def __init__(self, in_features, out_features, alpha, dropout, non_lin=False):
+    def __init__(self, in_features, out_features, alpha, dropout=0, non_lin=False):
         super(attention_layer, self).__init__()
         self.in_features = in_features
         self.out_features = out_features
         self.alpha = alpha
+        self.dropout = dropout
         self.non_lin = non_lin
 
         gain = torch.nn.init.calculate_gain('leaky_relu', alpha)
@@ -69,8 +70,11 @@ class attention_layer(nn.Module):
 
     def forward(self, batch_graphs, batch_features):
         batch_size, n_nodes, _ = batch_graphs.shape
+
         # Reshape features to pass them to linear layer
         mod_features = batch_features.reshape(batch_features.shape[0]*batch_features.shape[1], -1)
+
+        mod_features = F.dropout(mod_features, self.dropout) # Dunno if this is correct)
 
         # Linear transformation (dimension of features: in_features --> out_features)
         mod_features = self.fc(mod_features)
@@ -84,10 +88,10 @@ class attention_layer(nn.Module):
         # Split the output: each chunk contains attention coefficients for a single node
         degrees = batch_graphs.sum(dim=2).flatten().to(torch.int)
         scores = torch.split(scores, split_size_or_sections=degrees.tolist(), dim=0)
-        # scores = torch.transpose(scores, 1, 2) # Not sure if this line works, haven't tested yet
         scores = pad_sequence(scores, batch_first=True, padding_value=-9e15)
         scores = F.softmax(scores).flatten()
         scores = scores[scores>0]
+        scores = F.dropout(scores, self.dropout)
         out = scores.unsqueeze(1)*concat_features[:,self.out_features:]
         out = pad_sequence(torch.split(out, degrees.tolist(), dim=0),
                                         batch_first=True,
