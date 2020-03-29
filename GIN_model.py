@@ -35,7 +35,7 @@ class MLP(nn.Module):
 
 class attention_layer(nn.Module):
     # THIS IS A DRAFT
-    def __init__(self, in_features, out_features, alpha, dropout=0, non_lin=False):
+    def __init__(self, in_features, out_features, alpha=0.2, dropout=0, non_lin=False):
         super(attention_layer, self).__init__()
         self.in_features = in_features
         self.out_features = out_features
@@ -127,12 +127,20 @@ class GIN(nn.Module):
         # Batchnorms applied to the final layer of each MLP
         self.batch_norms = torch.nn.ModuleList()
 
+        # List of attention layers
+        self.attention_layers = torch.nn.ModuleList()
+
         # Input MLP layer
         self.mlp_layers.append(MLP(n_mlp_layers, input_dim, hidden_dim, hidden_dim))
         self.batch_norms.append(nn.BatchNorm1d(hidden_dim))
+
+        # First attention layer
+        self.attention_layers.append(attention_layer(input_dim, input_dim))
+
         for i in range(1, self.n_gnn_layers-1):
             self.mlp_layers.append(MLP(n_mlp_layers, hidden_dim, hidden_dim, hidden_dim))
             self.batch_norms.append(nn.BatchNorm1d(hidden_dim))
+            self.attention_layers.append(attention_layer(hidden_dim, hidden_dim))
 
         # Prediction layers for MLPs (hidden_dim --> output_dim and input_dim --> output_dim)
         self.mlp_pred = torch.nn.ModuleList()
@@ -158,6 +166,7 @@ class GIN(nn.Module):
                                     batch_graphs.shape[0]*batch_graphs.shape[1],
                                     self.output_dim))
         for layer in range(self.n_gnn_layers-1):
+            inter_out = self.attention_layers[layer](batch_graphs, inter_out)
             input = self.sum_neighbouring_features(batch_graphs, inter_out, layer)
             # Intermediate layers' outputs
             layer_scores[layer,:,:] = F.dropout(self.mlp_pred[layer](input), self.dropout)
