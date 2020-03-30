@@ -1,22 +1,13 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from layers import *
 
 def Normalize_Adj(A):
     A_tilda = A + torch.eye(A.shape[1]).repeat(A.shape[0], 1, 1)
     D_tilda = torch.diag_embed(torch.sum(A_tilda, 2).pow(-0.5))
     A_hat = D_tilda.bmm(A_tilda).bmm(D_tilda)
     return A_hat
-
-class GraphConvolutionLayer(nn.Module):
-  def __init__(self, input_dim, output_dim):
-    super().__init__()
-    self.fc = nn.Linear(input_dim, output_dim, bias=False)
-    torch.nn.init.xavier_uniform_(self.fc.weight)
-  def forward(self, X, A):
-    out = self.fc(X)
-    out = torch.bmm(A, out)
-    return out
 
 class TwoLayerGCN(nn.Module):
   def __init__(self, input_dim=5, hidden_dim=10, n_classes=4, dropout=0.5):
