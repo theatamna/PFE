@@ -3,15 +3,16 @@ import networkx as nx
 import os.path as path
 
 def get_dort_graphs(ds_name):
-    "WORK IN PROGRESS"
+    """
+    """
     adjacency_matrices = []
     features_matrices = []
     nodes_in_graph = []
     data_dir = "./data/"
     edges = np.array([(x[0], x[1]) for x in np.loadtxt(data_dir + ds_name + '/' + ds_name + "_A.txt",
                      delimiter = ',', dtype = 'int')])
-    graph_labels = np.loadtxt(data_dir + ds_name + '/' + ds_name + "_graph_labels.txt")
-    graph_labels = (graph_labels > 0) * 1
+    graph_labels = np.loadtxt(data_dir + ds_name + '/' + ds_name + "_graph_labels.txt", dtype = 'int')
+    graph_labels = (graph_labels > 0) * 1 * graph_labels
     ind = np.loadtxt(data_dir + ds_name + '/' + ds_name + "_graph_indicator.txt", dtype = 'int')
     _, indices = np.unique(ind, return_index = True)
 
@@ -47,7 +48,3 @@ def get_dort_graphs(ds_name):
             features_matrices.append(np.eye(num))
 
     return adjacency_matrices, graph_labels, features_matrices, nodes_label
-
-
-ds_name = "PROTEINS_full"
-K, B, F, C = get_dort_graphs(ds_name)
