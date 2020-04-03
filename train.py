@@ -6,7 +6,7 @@ import torchvision
 import torch.nn.functional as F
 from torch.utils.data import TensorDataset
 
-# Setting up the default Data Type
+# Setting up the default data type
 use_cuda = torch.cuda.is_available()
 FloatTensor = torch.cuda.FloatTensor if use_cuda else torch.FloatTensor
 device = torch.device('cuda') if use_cuda else torch.device('cpu')
@@ -21,10 +21,11 @@ def train_GNN(model, train_loader, optimizer, criterion, num_epochs, device):
     correct = 0
     total = 0
     for epoch in range(num_epochs):
-        for i, (Adj, Feat, labels) in enumerate(train_loader): # Need to change this later)
+        for i, (Adj, Feat, labels) in enumerate(train_loader): # Need to change this later
             Adj = Adj.to(dtype).to(device=device)
             Feat = Feat.to(dtype).to(device=device)
             labels = labels.to(torch.long).to(device=device)
+
             # Forward pass
             _, outputs = model(Feat, Adj)
             loss = criterion(outputs.transpose(1,2), labels)
