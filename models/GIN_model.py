@@ -6,7 +6,13 @@ import torch.nn as nn
 import torch.nn.functional as F
 from layers import *
 
-dtype = torch.float
+# Setting up the default Data Type
+use_cuda = torch.cuda.is_available()
+FloatTensor = torch.cuda.FloatTensor if use_cuda else torch.FloatTensor
+device = torch.device('cuda') if use_cuda else torch.device('cpu')
+dtype = torch.float32
+torch.set_default_tensor_type(FloatTensor)
+
 
 class GIN(nn.Module):
     def __init__(self, n_gnn_layers, n_mlp_layers, input_dim, hidden_dim,
@@ -98,3 +104,4 @@ class GIN(nn.Module):
         layer_scores = layer_scores.transpose(0, 1)
 
         return layer_scores, node_scores
+        
