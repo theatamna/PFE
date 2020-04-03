@@ -6,7 +6,7 @@ import torchvision
 import torch.nn.functional as F
 from torch.utils.data import TensorDataset
 
-def train_GNN(model, data_loader, optimizer, criterion, epochs, device):
+def train_GNN(model, train_loader, optimizer, criterion, num_epochs, device):
     """
     """
     train_log = torch.zeros((num_epochs, 4), dtype=torch.float, requires_grad=False)
