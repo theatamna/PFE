@@ -4,16 +4,18 @@ from torch.utils.data import TensorDataset
 from torch.utils.data import DataLoader
 from get_dort_graphs import *
 
-def prep_dataset(ds_name, n_train, n_valid, batch_size):
+def prep_dataset(ds_name, train_percentage, batch_size):
     adjacency_matrices, _, features_matrices, nodes_label = get_dort_graphs(ds_name)
-    assert n_train + n_valid == len(adjacency_matrices), "Error: splits must sum exactly to the total num. of data points"
+    #assert n_train + n_valid == len(adjacency_matrices), "Error: splits must sum exactly to the total num. of data points"
     nb_max_nodes = max(a.shape[0] for a in adjacency_matrices) # Max no. of nodes in a single graph
     d_max = max(x.shape[1] for x in features_matrices) # Max no. of features (different from graph to graph only when node features aren't available)
-
+    n_graphs = len(adjacency_matrices)
+    n_train = int(n_graphs*train_percentage)
+    n_valid = n_graphs - n_train
     # Homogenize dimensions (pad with zeros)
     for i in range(n_graphs):
-        A = np.zeros(nb_max_nodes, nb_max_nodes)
-        X = np.zeros(nb_max_nodes, d_max)
+        A = np.zeros((nb_max_nodes, nb_max_nodes))
+        X = np.zeros((nb_max_nodes, d_max))
         A[:adjacency_matrices[i].shape[0], :adjacency_matrices[i].shape[1]] = adjacency_matrices[i]
         adjacency_matrices[i] = A
 
@@ -36,7 +38,7 @@ def prep_dataset(ds_name, n_train, n_valid, batch_size):
     valid_y = nodes_label[n_train:n_train+n_valid]
 
     train_dataset = TensorDataset(adjacency_matrices[0], features_matrices[0], train_y)
-    valid_dataset = TensorDataset(adjacency_matrices[1], features_matrices[1], train_y)
+    valid_dataset = TensorDataset(adjacency_matrices[1], features_matrices[1], valid_y)
 
     # Load the data
     train_loader = DataLoader(dataset=train_dataset,
