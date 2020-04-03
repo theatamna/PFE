@@ -71,7 +71,7 @@ class GIN(nn.Module):
             b_graphs = batch_graphs + b_idd * (1 + self.eps[layer_num])
             input = torch.bmm(b_graphs, batch_features)
         else:
-            # Adding only self Loops
+            # Adding only self loops
             b_graphs = batch_graphs + b_idd
             input = torch.bmm(b_graphs, batch_features)
         return input.reshape(-1, batch_features.shape[2])

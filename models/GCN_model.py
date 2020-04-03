@@ -28,10 +28,7 @@ class TwoLayerGCN(nn.Module):
 
   def forward(self, X, A):
     out = self.gc1(X, Normalize_Adj(A))
-    #print('Output after 1st GCN layer: ', out.shape)
     out = F.relu(out)
     out = F.dropout(out, self.dropout)
     out = self.gc2(out, Normalize_Adj(A))
-    #print('Output after 2nd GCN layer: ', out.shape)
-    #out = F.softmax(out)
     return out

@@ -43,7 +43,7 @@ class MLP(nn.Module):
 
 
 class attention_layer(nn.Module):
-    # THIS IS A DRAFT
+
     def __init__(self, in_features, out_features, alpha=0.2, dropout=0, non_lin=False):
         super(attention_layer, self).__init__()
         self.in_features = in_features
@@ -67,7 +67,7 @@ class attention_layer(nn.Module):
 
         returns: concatenated neighboring features for each node (tuple of tensors)
         '''
-        # could be better (probably)
+
         n_features = torch.unsqueeze(batch_features, 1)
         n_features = n_features.repeat(1, batch_graphs.shape[1], 1, 1)
         degrees = batch_graphs.sum(dim=2).flatten().to(torch.int)
