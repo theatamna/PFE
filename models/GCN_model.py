@@ -6,6 +6,13 @@ import torch.nn as nn
 import torch.nn.functional as F
 from layers import *
 
+# Setting up the default data type
+use_cuda = torch.cuda.is_available()
+FloatTensor = torch.cuda.FloatTensor if use_cuda else torch.FloatTensor
+device = torch.device('cuda') if use_cuda else torch.device('cpu')
+dtype = torch.float32
+torch.set_default_tensor_type(FloatTensor)
+
 def Normalize_Adj(A):
     A_tilda = A + torch.eye(A.shape[1]).repeat(A.shape[0], 1, 1)
     D_tilda = torch.diag_embed(torch.sum(A_tilda, 2).pow(-0.5))

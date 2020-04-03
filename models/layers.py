@@ -3,8 +3,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.nn.utils.rnn import pad_sequence
 
-dtype = torch.float
-
 class GraphConvolutionLayer(nn.Module):
   def __init__(self, input_dim, output_dim):
     super().__init__()
