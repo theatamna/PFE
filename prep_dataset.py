@@ -9,7 +9,7 @@ def prep_dataset(ds_name, train_percentage, batch_size):
     #assert n_train + n_valid == len(adjacency_matrices), "Error: splits must sum exactly to the total num. of data points"
     nb_max_nodes = max(a.shape[0] for a in adjacency_matrices) # Max no. of nodes in a single graph
     d_max = max(x.shape[1] for x in features_matrices) # Max no. of features (different from graph to graph only when node features aren't available)
-    n_classes = max(nodes_label) + 1
+    n_classes = max(max(x) for x in nodes_label) + 1
     info = [d_max, n_classes] # number of nodes and number of classes
 
     n_graphs = len(adjacency_matrices)
