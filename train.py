@@ -27,7 +27,7 @@ def train_GNN(model, train_loader, optimizer, criterion, num_epochs, device):
             labels = labels.to(torch.long).to(device=device)
 
             # Forward pass
-            _, outputs = model(Feat, Adj)
+            _, outputs = model(Adj, Feat)
             loss = criterion(outputs.transpose(1,2), labels)
 
             # Backward and optimize
