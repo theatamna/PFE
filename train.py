@@ -13,9 +13,25 @@ device = torch.device('cuda') if use_cuda else torch.device('cpu')
 dtype = torch.float32
 torch.set_default_tensor_type(FloatTensor)
 
-def train_GNN(model, train_loader, optimizer, criterion, num_epochs, device):
-    """
-    """
+def train_GNN(model, train_loader, valid_loader, optimizer, criterion, num_epochs, device):
+
+    def test_GNN(model, valid_loader, device):
+        model = model.to(dtype).to(device=device)
+        with torch.no_grad():
+            correct = 0
+            total = 0
+            for Adj, Feat, labels in valid_loader:
+                Adj = Adj.to(dtype).to(device=device)
+                Feat = Feat.to(dtype).to(device=device)
+                labels = labels.to(torch.long).to(device=device)
+                _, outputs = model(Adj, Feat)
+                _, predicted = torch.max(outputs, 2)
+                total += labels.numel()
+                correct += (predicted == labels).sum()
+
+        # print('Accuracy of the network on the test data: {} %'.format(100 * correct / total))
+        return 100 * correct / total
+
     train_log = torch.zeros((num_epochs, 4), dtype=dtype, requires_grad=False)
     model = model.to(dtype).to(device=device)
     correct = 0
@@ -41,14 +57,15 @@ def train_GNN(model, train_loader, optimizer, criterion, num_epochs, device):
 
         train_log[epoch, 0] = epoch
         train_log[epoch, 1] = loss.item()
-        print('Epoch [{}/{}], Loss: {:.4f}'.format(epoch+1, num_epochs, loss))
         train_log[epoch, 2] = (100 * correct / total)
+        train_log[epoch, 3] = test_GNN(model, valid_loader, device)
+        print('Epoch [{}/{}], Loss: {:.4f}, train_acc: {:.1f}, valid_acc: {:.1f}'.format(epoch + 1, num_epochs, loss, train_log[epoch, 2], train_log[epoch, 3]))
 
     train_log = train_log.detach().cpu().numpy()
     return train_log
 
 def plot_learning_curves(train_log):
-    fig, ax = plt.subplots(2, 1, figsize=(10, 10))
+    fig, ax = plt.subplots(3, 1, figsize=(10, 10))
     fig.tight_layout()
 
     ax[0].plot(train_log[:, 0], train_log[:, 1])
@@ -57,18 +74,5 @@ def plot_learning_curves(train_log):
     ax[1].plot(train_log[:, 0], train_log[:, 2])
     ax[1].set(xlabel="epochs", ylabel="train_acc")
 
-def test_GNN(model, valid_loader, device):
-    model = model.to(dtype).to(device=device)
-    with torch.no_grad():
-        correct = 0
-        total = 0
-        for Adj, Feat, labels in valid_loader:
-            Adj = Adj.to(dtype).to(device=device)
-            Feat = Feat.to(dtype).to(device=device)
-            labels = labels.to(torch.long).to(device=device)
-            _, outputs = model(Adj, Feat)
-            _, predicted = torch.max(outputs, 2)
-            total += labels.numel()
-            correct += (predicted == labels).sum()
-
-        print('Accuracy of the network on the test data: {} %'.format(100 * correct / total))
+    ax[2].plot(train_log[:, 0], train_log[:, 3])
+    ax[2].set(xlabel="epochs", ylabel="valid_acc")
