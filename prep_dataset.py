@@ -34,6 +34,12 @@ def prep_dataset(ds_name, train_percentage, batch_size):
     features_matrices = torch.as_tensor(features_matrices)
     nodes_label = torch.as_tensor(nodes_label)
 
+    # Randomly shuffle data
+    mask = torch.randperm(n_graphs)
+    adjacency_matrices = adjacency_matrices[mask]
+    features_matrices = features_matrices[mask]
+    nodes_label = nodes_label[mask]
+
     # Split the data
     adjacency_matrices = torch.split(adjacency_matrices, split_size_or_sections=[n_train, n_valid], dim=0)
     features_matrices = torch.split(features_matrices, split_size_or_sections=[n_train, n_valid], dim=0)
