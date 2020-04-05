@@ -56,3 +56,19 @@ def plot_learning_curves(train_log):
 
     ax[1].plot(train_log[:, 0], train_log[:, 2])
     ax[1].set(xlabel="epochs", ylabel="train_acc")
+
+def test_GNN(model, valid_loader, device):
+    model = model.to(dtype).to(device=device)
+    with torch.no_grad():
+        correct = 0
+        total = 0
+        for Adj, Feat, labels in valid_loader:
+            Adj = Adj.to(dtype).to(device=device)
+            Feat = Feat.to(dtype).to(device=device)
+            labels = labels.to(torch.long).to(device=device)
+            _, outputs = model(Adj, Feat)
+            _, predicted = torch.max(outputs, 2)
+            total += labels.numel()
+            correct += (predicted == labels).sum()
+
+        print('Accuracy of the network on the test data: {} %'.format(100 * correct / total))
