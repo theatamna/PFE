@@ -4,7 +4,10 @@ from torch.utils.data import TensorDataset
 from torch.utils.data import DataLoader
 from get_dort_graphs import *
 
-def prep_dataset(ds_name, train_percentage, batch_size):
+from sklearn.model_selection import KFold
+
+
+def prep_dataset(ds_name, batch_size):
     adjacency_matrices, _, features_matrices, nodes_label = get_dort_graphs(ds_name)
     nb_max_nodes = max(a.shape[0] for a in adjacency_matrices) # Max no. of nodes in a single graph
     d_max = max(x.shape[1] for x in features_matrices) # Max no. of features (different from graph to graph only when node features aren't available)
@@ -12,8 +15,6 @@ def prep_dataset(ds_name, train_percentage, batch_size):
     info = [d_max, n_classes] # Number of nodes and number of classes
 
     n_graphs = len(adjacency_matrices)
-    n_train = int(n_graphs*train_percentage)
-    n_valid = n_graphs - n_train
 
     # Homogenize dimensions (pad with zeros)
     for i in range(n_graphs):
@@ -40,20 +41,35 @@ def prep_dataset(ds_name, train_percentage, batch_size):
     features_matrices = features_matrices[mask]
     nodes_label = nodes_label[mask]
 
-    # Split the data
-    adjacency_matrices = torch.split(adjacency_matrices, split_size_or_sections=[n_train, n_valid], dim=0)
-    features_matrices = torch.split(features_matrices, split_size_or_sections=[n_train, n_valid], dim=0)
-    train_y = nodes_label[:n_train]
-    valid_y = nodes_label[n_train:n_train+n_valid]
+    return adjacency_matrices, features_matrices, nodes_label, info
 
-    train_dataset = TensorDataset(adjacency_matrices[0], features_matrices[0], train_y)
-    valid_dataset = TensorDataset(adjacency_matrices[1], features_matrices[1], valid_y)
+def get_folded_data(ds_name, batch_size, n_folds):
+    """
+    Splits data into K-folds for cross-validation
+    inputs:
+    ds_name: String, name of the dataset
+    batch_size: Int,
+    n_folds: Int, number of folds
+    Returns:
+    folded_train_data: A list of dataloaders for each "training data fold"
+    folded_test_data: A list of dataloaders for each "test data fold"
+    info: [max_numbers_of_features, number_of_classes]
+    """
+    adj, feat, labels, info = prep_dataset(ds_name, batch_size)
+    kf = KFold(n_splits=n_folds)
+    folded_train_data = []
+    folded_test_data = []
+    for train_index, test_index in kf.split(adj):
 
-    # Load the data
-    train_loader = DataLoader(dataset=train_dataset,
+        train_fold = TensorDataset(adj[train_index], feat[train_index], labels[train_index])
+        test_fold = TensorDataset(adj[test_index], feat[test_index], labels[test_index])
+
+        folded_train_data.append(DataLoader(dataset=train_fold,
                                            batch_size=batch_size,
-                                           shuffle=True)
-    valid_loader = DataLoader(dataset=valid_dataset,
-                                          batch_size=batch_size,
-                                          shuffle=False)
-    return train_loader, valid_loader, info
+                                           shuffle=False))
+
+        folded_test_data.append(DataLoader(dataset=test_fold,
+                                           batch_size=batch_size,
+                                           shuffle=False))
+
+    return folded_train_data, folded_test_data, info
