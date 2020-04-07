@@ -51,6 +51,7 @@ class GIN(nn.Module):
         # First attention layer
         if self.attention:
             self.attention_layers.append(attention_layer(input_dim))
+            self.attention_layers.append(attention_layer(hidden_dim))
 
         for i in range(1, self.n_gnn_layers-1):
             self.mlp_layers.append(MLP(n_mlp_layers, hidden_dim, hidden_dim, hidden_dim))
@@ -84,14 +85,22 @@ class GIN(nn.Module):
         for layer in range(self.n_gnn_layers-1):
             if self.attention:
                 att_scores = self.attention_layers[layer](batch_graphs, inter_out)
-            input = self.sum_neighbouring_features(batch_graphs * att_scores, inter_out, layer)
+                adj_mats = batch_graphs * att_scores
+            else:
+                adj_mats = batch_graphs
+            input = self.sum_neighbouring_features(adj_mats, inter_out, layer)
             # Intermediate layers' outputs
             layer_scores[layer,:,:] = F.dropout(self.mlp_pred[layer](input), self.dropout)
             out = self.mlp_layers[layer](input)
             inter_out = F.relu(self.batch_norms[layer](out)).reshape(batch_graphs.shape[0], batch_graphs.shape[1], -1)
 
         # Last layer (the one without batch_norm)
-        input = self.sum_neighbouring_features(batch_graphs * att_scores, inter_out, self.n_gnn_layers-1)
+        if self.attention:
+            att_scores = self.attention_layers[self.n_gnn_layers-1](batch_graphs, inter_out)
+            adj_mats = batch_graphs * att_scores
+        else:
+            adj_mats = batch_graphs
+        input = self.sum_neighbouring_features(adj_mats, inter_out, self.n_gnn_layers-1)
         layer_scores[self.n_gnn_layers-1,:,:] = (F.dropout(self.mlp_pred[self.n_gnn_layers-1](input), self.dropout))
 
         # Readout (sum) and concat.
