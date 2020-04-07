@@ -47,18 +47,15 @@ class MLP(nn.Module):
 
 class attention_layer(nn.Module):
 
-    def __init__(self, in_features, out_features, alpha=0.2, dropout=0, non_lin=False):
+    def __init__(self, in_feature, alpha=0.2, dropout=0, non_lin=False):
         super(attention_layer, self).__init__()
         self.in_features = in_features
-        self.out_features = out_features
         self.alpha = alpha
         self.dropout = dropout
-        #self.non_lin = non_lin
 
         gain = torch.nn.init.calculate_gain('leaky_relu', alpha)
 
-        #self.fc = nn.Linear(in_features, out_features, bias=False) # First linear transformation
-        self.a = nn.Parameter(torch.zeros((2*out_features, 1)))
+        self.a = nn.Parameter(torch.zeros((2*in_features, 1)))
         nn.init.xavier_uniform_(self.a.data, gain=gain)
 
         self.LeakyRelu = nn.LeakyReLU(alpha)
