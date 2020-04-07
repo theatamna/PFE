@@ -76,11 +76,9 @@ def plot_learning_curves(train_log):
     ax[0].legend()
 
     ax[1].set_ylim(bottom=0, top=100)
-    ax[1].plot(train_log[:, 0], train_log[:, 2], color="orange", marker="v",
-               markevery=20, label="train_acc")
+    ax[1].plot(train_log[:, 0], train_log[:, 2], marker="v", markevery=20, label="train_acc")
     ax[1].set(xlabel="epochs", ylabel="train_acc")
-    ax[1].plot(train_log[:, 0], train_log[:, 3], color="cyan", marker="s",
-               markevery=20, label="train_acc")
+    ax[1].plot(train_log[:, 0], train_log[:, 3], marker="s", markevery=20, label="valid_acc")
     ax[1].set(xlabel="epochs", ylabel="valid_acc")
     ax[1].legend()
 
