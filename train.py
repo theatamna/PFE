@@ -65,14 +65,23 @@ def train_GNN(model, train_loader, valid_loader, optimizer, criterion, num_epoch
     return train_log
 
 def plot_learning_curves(train_log):
-    fig, ax = plt.subplots(3, 1, figsize=(10, 10))
+    fig, ax = plt.subplots(2, 1, figsize=(10, 10))
     fig.tight_layout()
+
+    ax[0].grid()
+    ax[1].grid()
 
     ax[0].plot(train_log[:, 0], train_log[:, 1])
     ax[0].set(xlabel="epochs", ylabel="loss")
+    ax[0].legend()
 
-    ax[1].plot(train_log[:, 0], train_log[:, 2])
+    ax[1].set_ylim(bottom=0, top=100)
+    ax[1].plot(train_log[:, 0], train_log[:, 2], color="orange", marker="v",
+               markevery=20, label="train_acc")
     ax[1].set(xlabel="epochs", ylabel="train_acc")
+    ax[1].plot(train_log[:, 0], train_log[:, 3], color="cyan", marker="s",
+               markevery=20, label="train_acc")
+    ax[1].set(xlabel="epochs", ylabel="valid_acc")
+    ax[1].legend()
 
-    ax[2].plot(train_log[:, 0], train_log[:, 3])
-    ax[2].set(xlabel="epochs", ylabel="valid_acc")
+    plt.show()
