@@ -47,7 +47,7 @@ class MLP(nn.Module):
 
 class attention_layer(nn.Module):
 
-    def __init__(self, in_feature, alpha=0.2, dropout=0, non_lin=False):
+    def __init__(self, in_feature, alpha=0.2, dropout=0):
         super(attention_layer, self).__init__()
         self.in_features = in_features
         self.alpha = alpha
@@ -90,7 +90,6 @@ class attention_layer(nn.Module):
         scores = pad_sequence(scores, batch_first=True, padding_value=-9e15)
         scores = F.softmax(scores).flatten()
         scores = scores[scores>0]
-        #scores = F.dropout(scores, self.dropout)
         attention_scores.masked_scatter_(batch_graphs.to(torch.bool), scores)
 
         return attention_scores
