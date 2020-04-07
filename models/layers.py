@@ -47,7 +47,7 @@ class MLP(nn.Module):
 
 class attention_layer(nn.Module):
 
-    def __init__(self, in_feature, alpha=0.2, dropout=0):
+    def __init__(self, in_features, alpha=0.2, dropout=0):
         super(attention_layer, self).__init__()
         self.in_features = in_features
         self.alpha = alpha

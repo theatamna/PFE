@@ -50,13 +50,13 @@ class GIN(nn.Module):
 
         # First attention layer
         if self.attention:
-            self.attention_layers.append(attention_layer(input_dim, input_dim))
+            self.attention_layers.append(attention_layer(input_dim))
 
         for i in range(1, self.n_gnn_layers-1):
             self.mlp_layers.append(MLP(n_mlp_layers, hidden_dim, hidden_dim, hidden_dim))
             self.batch_norms.append(nn.BatchNorm1d(hidden_dim))
             if self.attention:
-                self.attention_layers.append(attention_layer(hidden_dim, hidden_dim))
+                self.attention_layers.append(attention_layer(hidden_dim))
 
         # Prediction layers for MLPs (hidden_dim --> output_dim and input_dim --> output_dim)
         self.mlp_pred = torch.nn.ModuleList()
@@ -83,15 +83,15 @@ class GIN(nn.Module):
                                     self.output_dim))
         for layer in range(self.n_gnn_layers-1):
             if self.attention:
-                inter_out = self.attention_layers[layer](batch_graphs, inter_out)
-            input = self.sum_neighbouring_features(batch_graphs, inter_out, layer)
+                att_scores = self.attention_layers[layer](batch_graphs, inter_out)
+            input = self.sum_neighbouring_features(batch_graphs * att_scores, inter_out, layer)
             # Intermediate layers' outputs
             layer_scores[layer,:,:] = F.dropout(self.mlp_pred[layer](input), self.dropout)
             out = self.mlp_layers[layer](input)
             inter_out = F.relu(self.batch_norms[layer](out)).reshape(batch_graphs.shape[0], batch_graphs.shape[1], -1)
 
         # Last layer (the one without batch_norm)
-        input = self.sum_neighbouring_features(batch_graphs, inter_out, self.n_gnn_layers-1)
+        input = self.sum_neighbouring_features(batch_graphs * att_scores, inter_out, self.n_gnn_layers-1)
         layer_scores[self.n_gnn_layers-1,:,:] = (F.dropout(self.mlp_pred[self.n_gnn_layers-1](input), self.dropout))
 
         # Readout (sum) and concat.
