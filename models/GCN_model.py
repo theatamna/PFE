@@ -20,15 +20,23 @@ def Normalize_Adj(A):
     return A_hat
 
 class TwoLayerGCN(nn.Module):
-  def __init__(self, input_dim=5, hidden_dim=10, n_classes=4, dropout=0.5):
+  def __init__(self, input_dim=5, hidden_dim=10, n_classes=4, dropout=0, attention=False):
     super().__init__()
+    self.attention = attention
     self.gc1 = GraphConvolutionLayer(input_dim, hidden_dim)
     self.gc2 = GraphConvolutionLayer(hidden_dim, n_classes)
+    if self.attention:
+        self.attention1 = attention_layer(in_features=input_dim)
+        self.attention2 = attention_layer(in_features=hidden_dim)
+
     self.dropout = dropout
 
   def forward(self, X, A):
-    out = self.gc1(X, Normalize_Adj(A))
+    att_scores = self.attention1(A, X)
+    out = self.gc1(X, att_scores * Normalize_Adj(A))
     out = F.relu(out)
     out = F.dropout(out, self.dropout)
-    out = self.gc2(out, Normalize_Adj(A))
-    return out
+    att_scores = self.attention2(A, out)
+    node_scores = self.gc2(out, att_scores * Normalize_Adj(A))
+    graph_scores = torch.sum(node_scores, 1)
+    return node_scores, graph_scores
