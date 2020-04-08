@@ -12,7 +12,8 @@ class GraphConvolutionLayer(nn.Module):
     self.fc = nn.Linear(input_dim, output_dim, bias=False)
     torch.nn.init.xavier_uniform_(self.fc.weight)
   def forward(self, X, A):
-    out = self.fc(X)
+    out = self.fc(X.reshape(-1, X.shape[2]))
+    out = out.reshape(A.shape[0], A.shape[1], -1)
     out = torch.bmm(A, out)
     return out
 
