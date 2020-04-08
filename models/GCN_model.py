@@ -32,11 +32,19 @@ class TwoLayerGCN(nn.Module):
     self.dropout = dropout
 
   def forward(self, X, A):
-    att_scores = self.attention1(A, X)
-    out = self.gc1(X, att_scores * Normalize_Adj(A))
+    if self.attention:
+        att_scores = self.attention1(A, X)
+        input = Normalize_Adj(att_scores * A)
+    else:
+        input = A
+    out = self.gc1(X, input)
     out = F.relu(out)
     out = F.dropout(out, self.dropout)
-    att_scores = self.attention2(A, out)
-    node_scores = self.gc2(out, att_scores * Normalize_Adj(A))
+    if self.attention:
+        att_scores = self.attention2(A, out)
+        input = Normalize_Adj(att_scores * A)
+    else:
+        input = A
+    node_scores = self.gc2(out, input)
     graph_scores = torch.sum(node_scores, 1)
     return node_scores, graph_scores
