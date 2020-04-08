@@ -25,7 +25,7 @@ def train_GNN(model, train_loader, valid_loader, optimizer, criterion, num_epoch
                 Feat = Feat.to(dtype).to(device=device)
                 labels = labels.to(torch.long).to(device=device)
                 _, outputs = model(Adj, Feat)
-                _, predicted = torch.max(outputs, 2)
+                _, predicted = torch.max(outputs, 1)
                 total += labels.numel()
                 correct += (predicted == labels).sum()
 
@@ -37,21 +37,21 @@ def train_GNN(model, train_loader, valid_loader, optimizer, criterion, num_epoch
     correct = 0
     total = 0
     for epoch in range(num_epochs):
-        for i, (Adj, Feat, labels) in enumerate(train_loader): # Need to change this later
+        for i, (Adj, Feat, labels) in enumerate(train_loader):
             Adj = Adj.to(dtype).to(device=device)
             Feat = Feat.to(dtype).to(device=device)
             labels = labels.to(torch.long).to(device=device)
 
             # Forward pass
             _, outputs = model(Adj, Feat)
-            loss = criterion(outputs.transpose(1, 2), labels)
+            loss = criterion(outputs, labels)
 
             # Backward and optimize
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
 
-            _, predicted = torch.max(outputs, 2)
+            _, predicted = torch.max(outputs, 1)
             correct += (predicted == labels).sum()
             total += labels.numel()
 

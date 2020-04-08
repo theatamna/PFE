@@ -89,8 +89,9 @@ class GIN(nn.Module):
             else:
                 adj_mats = batch_graphs
             input = self.sum_neighbouring_features(adj_mats, inter_out, layer)
+
             # Intermediate layers' outputs
-            layer_scores[layer,:,:] = F.dropout(self.mlp_pred[layer](input), self.dropout)
+            layer_scores[layer, :, :] = F.dropout(self.mlp_pred[layer](input), self.dropout)
             out = self.mlp_layers[layer](input)
             inter_out = F.relu(self.batch_norms[layer](out)).reshape(batch_graphs.shape[0], batch_graphs.shape[1], -1)
 
@@ -101,14 +102,12 @@ class GIN(nn.Module):
         else:
             adj_mats = batch_graphs
         input = self.sum_neighbouring_features(adj_mats, inter_out, self.n_gnn_layers-1)
-        layer_scores[self.n_gnn_layers-1,:,:] = (F.dropout(self.mlp_pred[self.n_gnn_layers-1](input), self.dropout))
+        layer_scores[self.n_gnn_layers-1, :, :] = (F.dropout(self.mlp_pred[self.n_gnn_layers-1](input), self.dropout))
 
         # Readout (sum) and concat.
         layer_scores = layer_scores.reshape(self.n_gnn_layers, batch_graphs.shape[0], batch_graphs.shape[1], self.output_dim)
         node_scores = layer_scores[self.n_gnn_layers-1, :, :, :] # Added this line, returns vector of scores for each node, just like GCN
-        layer_scores = torch.sum(layer_scores, 2)
-        layer_scores = layer_scores.transpose(1, 2)
-        layer_scores = layer_scores.reshape(-1, batch_graphs.shape[0])
-        layer_scores = layer_scores.transpose(0, 1)
 
-        return layer_scores, node_scores
+        # Graph-level readout (sum of node features)
+        graph_scores = torch.sum(node_scores, 1) # Scores for each graph (2D tensor)
+        return node_scores, graph_scores

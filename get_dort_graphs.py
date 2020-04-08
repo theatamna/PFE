@@ -46,5 +46,4 @@ def get_dort_graphs(ds_name):
     except OSError:
         for num in nodes_in_graph:
             features_matrices.append(np.eye(num))
-
     return adjacency_matrices, graph_labels, features_matrices, nodes_label
