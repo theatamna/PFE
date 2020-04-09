@@ -53,7 +53,7 @@ def get_folded_data(ds_name, batch_size, n_folds):
     folded_test_data: A list of dataloaders for each "test data fold"
     info: [max_numbers_of_features, number_of_classes]
     """
-    adj, feat, labels, info = prep_dataset(ds_name, batch_size)
+    adj, feat, labels, info = prep_dataset(ds_name)
     kf = KFold(n_splits=n_folds)
     folded_train_data = []
     folded_test_data = []
