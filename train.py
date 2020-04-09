@@ -13,57 +13,6 @@ device = torch.device('cuda') if use_cuda else torch.device('cpu')
 dtype = torch.float32
 torch.set_default_tensor_type(FloatTensor)
 
-def train_GNN(model, train_loader, valid_loader, optimizer, criterion, num_epochs, device):
-
-    def test_GNN(model, valid_loader, device):
-        model = model.to(dtype).to(device=device)
-        with torch.no_grad():
-            correct = 0
-            total = 0
-            for Adj, Feat, labels in valid_loader:
-                Adj = Adj.to(dtype).to(device=device)
-                Feat = Feat.to(dtype).to(device=device)
-                labels = labels.to(torch.long).to(device=device)
-                _, outputs = model(Adj, Feat)
-                _, predicted = torch.max(outputs, 1)
-                total += labels.numel()
-                correct += (predicted == labels).sum()
-
-        # print('Accuracy of the network on the test data: {} %'.format(100 * correct / total))
-        return 100 * correct / total
-
-    train_log = torch.zeros((num_epochs, 4), dtype=dtype, requires_grad=False)
-    model = model.to(dtype).to(device=device)
-    correct = 0
-    total = 0
-    for epoch in range(num_epochs):
-        for i, (Adj, Feat, labels) in enumerate(train_loader):
-            Adj = Adj.to(dtype).to(device=device)
-            Feat = Feat.to(dtype).to(device=device)
-            labels = labels.to(torch.long).to(device=device)
-
-            # Forward pass
-            _, outputs = model(Adj, Feat)
-            loss = criterion(outputs, labels)
-
-            # Backward and optimize
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
-
-            _, predicted = torch.max(outputs, 1)
-            correct += (predicted == labels).sum()
-            total += labels.numel()
-
-        train_log[epoch, 0] = epoch
-        train_log[epoch, 1] = loss.item()
-        train_log[epoch, 2] = (100 * correct / total)
-        train_log[epoch, 3] = test_GNN(model, valid_loader, device)
-        print('Epoch [{}/{}], Loss: {:.4f}, train_acc: {:.1f}, valid_acc: {:.1f}'.format(epoch + 1, num_epochs, loss, train_log[epoch, 2], train_log[epoch, 3]))
-
-    train_log = train_log.detach().cpu().numpy()
-    return train_log
-
 def plot_learning_curves(train_log):
     fig, ax = plt.subplots(2, 1, figsize=(10, 10))
     fig.tight_layout()
@@ -83,3 +32,59 @@ def plot_learning_curves(train_log):
     ax[1].legend()
 
     plt.show()
+
+def train_GNN(model, folded_train_data, folded_valid_data, optimizer, criterion, num_epochs, device):
+    n_folds = len(folded_train_data)
+    def test_GNN(model, valid_loader, device):
+        model = model.to(dtype).to(device=device)
+        with torch.no_grad():
+            correct = 0
+            total = 0
+            for Adj, Feat, labels in valid_loader:
+                Adj = Adj.to(dtype).to(device=device)
+                Feat = Feat.to(dtype).to(device=device)
+                labels = labels.to(torch.long).to(device=device)
+                _, outputs = model(Adj, Feat)
+                _, predicted = torch.max(outputs, 1)
+                total += labels.numel()
+                correct += (predicted == labels).sum()
+        return 100 * correct / total
+
+    model = model.to(dtype).to(device=device)
+    train_acc_history = []
+    valid_acc_history = []
+    for fold in range(n_folds):
+        train_log = torch.zeros((num_epochs, 4), dtype=dtype, requires_grad=False)
+        for epoch in range(num_epochs):
+            correct = 0
+            total = 0
+            for i, (Adj, Feat, labels) in enumerate(folded_train_data[fold]):
+                Adj = Adj.to(dtype).to(device=device)
+                Feat = Feat.to(dtype).to(device=device)
+                labels = labels.to(torch.long).to(device=device)
+
+                # Forward pass
+                _, outputs = model(Adj, Feat)
+                loss = criterion(outputs, labels)
+
+                # Backward and optimize
+                optimizer.zero_grad()
+                loss.backward()
+                optimizer.step()
+
+                _, predicted = torch.max(outputs, 1)
+                correct += (predicted == labels).sum()
+                total += labels.numel()
+
+            train_log[epoch, 0] = epoch
+            train_log[epoch, 1] = loss.item()
+            train_log[epoch, 2] = (100 * correct / total)
+            train_log[epoch, 3] = test_GNN(model, folded_valid_data[fold], device)
+            if (epoch % 50) == 0:
+                print('Fold no. {}, epoch [{}/{}], Loss: {:.4f}, train_acc: {:.1f}, valid_acc: {:.1f}'.format(fold + 1, epoch + 1, num_epochs, loss, train_log[epoch, 2], train_log[epoch, 3]))
+        train_acc_history.append(train_log[epoch, 2])
+        valid_acc_history.append(train_log[epoch, 3])
+        train_log = train_log.detach().cpu().numpy()
+        plot_learning_curves(train_log)
+    print('Average training accuracy across the {} folds: {:.1f}'.format(n_folds, sum(train_acc_history)/len(train_acc_history)))
+    print('Average validation accuracy across the {} folds: {:.1f}'.format(n_folds, sum(valid_acc_history)/len(valid_acc_history)))
