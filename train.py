@@ -53,6 +53,7 @@ def train_GNN(model, folded_train_data, folded_valid_data, optimizer, criterion,
     model = model.to(dtype).to(device=device)
     train_acc_history = []
     valid_acc_history = []
+
     for fold in range(n_folds):
         train_log = torch.zeros((num_epochs, 4), dtype=dtype, requires_grad=False)
         for epoch in range(num_epochs):
@@ -86,5 +87,6 @@ def train_GNN(model, folded_train_data, folded_valid_data, optimizer, criterion,
         valid_acc_history.append(train_log[epoch, 3])
         train_log = train_log.detach().cpu().numpy()
         plot_learning_curves(train_log)
+
     print('Average training accuracy across the {} folds: {:.1f}'.format(n_folds, sum(train_acc_history)/len(train_acc_history)))
     print('Average validation accuracy across the {} folds: {:.1f}'.format(n_folds, sum(valid_acc_history)/len(valid_acc_history)))
