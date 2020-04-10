@@ -35,10 +35,10 @@ def prep_dataset(ds_name):
     graph_labels = torch.as_tensor(graph_labels)
 
     # Randomly shuffle data
-    mask = torch.randperm(n_graphs)
-    adjacency_matrices = adjacency_matrices[mask]
-    features_matrices = features_matrices[mask]
-    graph_labels = graph_labels[mask]
+    #mask = torch.randperm(n_graphs)
+    #adjacency_matrices = adjacency_matrices[mask]
+    #features_matrices = features_matrices[mask]
+    #graph_labels = graph_labels[mask]
     return adjacency_matrices, features_matrices, graph_labels, info
 
 def get_folded_data(ds_name, batch_size, n_folds):
@@ -64,7 +64,7 @@ def get_folded_data(ds_name, batch_size, n_folds):
 
         folded_train_data.append(DataLoader(dataset=train_fold,
                                            batch_size=batch_size,
-                                           shuffle=False))
+                                           shuffle=True))
 
         folded_test_data.append(DataLoader(dataset=test_fold,
                                            batch_size=batch_size,
