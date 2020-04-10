@@ -1,5 +1,4 @@
 import matplotlib.pyplot as plt
-import pickle
 import torch
 import torch.nn as nn
 import torchvision
@@ -35,8 +34,8 @@ def plot_learning_curves(train_log):
 
 def train_GNN(model, folded_train_data, folded_valid_data, optimizer, criterion, num_epochs, device):
     n_folds = len(folded_train_data)
-    def test_GNN(instance, valid_loader, device):
-        instance.eval()
+    def test_GNN(model, valid_loader, device):
+        model.eval()
         with torch.no_grad():
             correct = 0
             total = 0
@@ -44,21 +43,20 @@ def train_GNN(model, folded_train_data, folded_valid_data, optimizer, criterion,
                 Adj = Adj.to(dtype).to(device=device)
                 Feat = Feat.to(dtype).to(device=device)
                 labels = labels.to(torch.long).to(device=device)
-                _, outputs = instance(Adj, Feat)
+                _, outputs = model(Adj, Feat)
                 _, predicted = torch.max(outputs, 1)
                 total += labels.numel()
                 correct += (predicted == labels).sum()
         return 100 * correct / total
 
+    model = model.to(dtype).to(device=device)
     train_acc_history = []
     valid_acc_history = []
 
     for fold in range(n_folds):
         train_log = torch.zeros((num_epochs, 4), dtype=dtype, requires_grad=False)
-        instance = pickle.loads(pickle.dumps(model))  # Copy model
-        instance = instance.to(dtype).to(device=device)
         for epoch in range(num_epochs):
-            instance.train()
+            model.train()
             correct = 0
             total = 0
             for i, (Adj, Feat, labels) in enumerate(folded_train_data[fold]):
@@ -67,7 +65,7 @@ def train_GNN(model, folded_train_data, folded_valid_data, optimizer, criterion,
                 labels = labels.to(torch.long).to(device=device)
 
                 # Forward pass
-                _, outputs = instance(Adj, Feat)
+                _, outputs = model(Adj, Feat)
                 loss = criterion(outputs, labels)
 
                 # Backward and optimize
@@ -82,7 +80,7 @@ def train_GNN(model, folded_train_data, folded_valid_data, optimizer, criterion,
             train_log[epoch, 0] = epoch
             train_log[epoch, 1] = loss.item()
             train_log[epoch, 2] = (100 * correct / total)
-            train_log[epoch, 3] = test_GNN(instance, folded_valid_data[fold], device)
+            train_log[epoch, 3] = test_GNN(model, folded_valid_data[fold], device)
             print('Fold no. {}, epoch [{}/{}], Loss: {:.4f}, train_acc: {:.1f}, valid_acc: {:.1f}'.format(fold + 1, epoch + 1, num_epochs, loss, train_log[epoch, 2], train_log[epoch, 3]))
         train_acc_history.append(train_log[epoch, 2])
         valid_acc_history.append(train_log[epoch, 3])
