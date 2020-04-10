@@ -81,8 +81,7 @@ def train_GNN(model, folded_train_data, folded_valid_data, optimizer, criterion,
             train_log[epoch, 1] = loss.item()
             train_log[epoch, 2] = (100 * correct / total)
             train_log[epoch, 3] = test_GNN(model, folded_valid_data[fold], device)
-            if (epoch % 50) == 0:
-                print('Fold no. {}, epoch [{}/{}], Loss: {:.4f}, train_acc: {:.1f}, valid_acc: {:.1f}'.format(fold + 1, epoch + 1, num_epochs, loss, train_log[epoch, 2], train_log[epoch, 3]))
+            print('Fold no. {}, epoch [{}/{}], Loss: {:.4f}, train_acc: {:.1f}, valid_acc: {:.1f}'.format(fold + 1, epoch + 1, num_epochs, loss, train_log[epoch, 2], train_log[epoch, 3]))
         train_acc_history.append(train_log[epoch, 2])
         valid_acc_history.append(train_log[epoch, 3])
         train_log = train_log.detach().cpu().numpy()
