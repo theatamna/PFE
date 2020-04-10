@@ -25,10 +25,6 @@ def prep_dataset(ds_name):
         X[:features_matrices[i].shape[0], :features_matrices[i].shape[1]] = features_matrices[i]
         features_matrices[i] = X
 
-        #y = np.zeros(nb_max_nodes)
-        #y[:nodes_label[i].shape[0]] = nodes_label[i]
-        #nodes_label[i] = y
-
     # Convert all data to make it PyTorch-compatible
     adjacency_matrices = torch.as_tensor(adjacency_matrices)
     features_matrices = torch.as_tensor(features_matrices)
