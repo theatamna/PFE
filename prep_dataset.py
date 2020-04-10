@@ -33,12 +33,6 @@ def prep_dataset(ds_name):
     adjacency_matrices = torch.as_tensor(adjacency_matrices)
     features_matrices = torch.as_tensor(features_matrices)
     graph_labels = torch.as_tensor(graph_labels)
-
-    # Randomly shuffle data
-    #mask = torch.randperm(n_graphs)
-    #adjacency_matrices = adjacency_matrices[mask]
-    #features_matrices = features_matrices[mask]
-    #graph_labels = graph_labels[mask]
     return adjacency_matrices, features_matrices, graph_labels, info
 
 def get_folded_data(ds_name, batch_size, n_folds):
