@@ -53,8 +53,10 @@ def train_GNN(model, folded_train_data, folded_valid_data, optimizer, criterion,
     train_acc_history = []
     valid_acc_history = []
     Wsave = model.get_weights()
+    opt_save = optimizer.state_dict()
     for fold in range(n_folds):
         model.set_weights(Wsave)
+        optimizer.load_state_dict(opt_save)
         train_log = torch.zeros((num_epochs, 4), dtype=dtype, requires_grad=False)
         for epoch in range(num_epochs):
             model.train()
