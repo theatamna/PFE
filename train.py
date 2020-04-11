@@ -52,8 +52,9 @@ def train_GNN(model, folded_train_data, folded_valid_data, optimizer, criterion,
     model = model.to(dtype).to(device=device)
     train_acc_history = []
     valid_acc_history = []
-
+    Wsave = model.get_weights()
     for fold in range(n_folds):
+        model.set_weights(Wsave)
         train_log = torch.zeros((num_epochs, 4), dtype=dtype, requires_grad=False)
         for epoch in range(num_epochs):
             model.train()
@@ -89,3 +90,10 @@ def train_GNN(model, folded_train_data, folded_valid_data, optimizer, criterion,
 
     print('Average training accuracy across the {} folds: {:.1f}'.format(n_folds, sum(train_acc_history)/len(train_acc_history)))
     print('Average validation accuracy across the {} folds: {:.1f}'.format(n_folds, sum(valid_acc_history)/len(valid_acc_history)))
+
+def weights_init(m):
+    if isinstance(m, nn.Conv2d):
+        torch.nn.init.xavier_uniform(m.weight.data)
+        torch.nn.init.xavier_uniform(m.bias.data)
+
+net.apply(weights_init)
