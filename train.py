@@ -14,15 +14,13 @@ dtype = torch.float32
 torch.set_default_tensor_type(FloatTensor)
 
 def plot_learning_curves(train_log):
-    fig, ax = plt.subplots(2, 1, figsize=(10, 10))
-    fig.tight_layout()
-
+    fig, ax = plt.subplots(1, 2, figsize=(20, 4))
+    #fig.tight_layout()
     ax[0].grid()
     ax[1].grid()
 
     ax[0].plot(train_log[:, 0], train_log[:, 1])
     ax[0].set(xlabel="epochs", ylabel="loss")
-    ax[0].legend()
 
     ax[1].set_ylim(bottom=0, top=100)
     ax[1].plot(train_log[:, 0], train_log[:, 2], marker="v", markevery=20, label="train_acc")
@@ -31,7 +29,7 @@ def plot_learning_curves(train_log):
     ax[1].set(xlabel="epochs", ylabel="valid_acc")
     ax[1].legend()
 
-    plt.show()
+    return fig, ax
 
 def train_GNN(model, folded_train_data, folded_valid_data, optimizer, criterion, num_epochs, device):
     n_folds = len(folded_train_data)
@@ -52,6 +50,7 @@ def train_GNN(model, folded_train_data, folded_valid_data, optimizer, criterion,
 
     model = model.to(dtype).to(device=device)
     train_acc_history = []
+    train_history = []
     valid_acc_history = []
     init_state = copy.deepcopy(model.state_dict())
     init_state_opt = copy.deepcopy(optimizer.state_dict())
@@ -86,10 +85,14 @@ def train_GNN(model, folded_train_data, folded_valid_data, optimizer, criterion,
             train_log[epoch, 2] = (100 * correct / total)
             train_log[epoch, 3] = test_GNN(model, folded_valid_data[fold], device)
             print('Fold no. {}, epoch [{}/{}], Loss: {:.4f}, train_acc: {:.1f}, valid_acc: {:.1f}'.format(fold + 1, epoch + 1, num_epochs, loss, train_log[epoch, 2], train_log[epoch, 3]))
+        train_log = train_log.detach().cpu().numpy()
         train_acc_history.append(train_log[epoch, 2])
         valid_acc_history.append(train_log[epoch, 3])
-        train_log = train_log.detach().cpu().numpy()
-        plot_learning_curves(train_log)
+        train_history.append(train_log)
+    for i, train_log in enumerate(train_history):
+        fig, ax = plot_learning_curves(train_log)
+        fig.suptitle("Learning Curves Fold no. {}".format(i+1))
+        plt.show()
 
     print('Average training accuracy across the {} folds: {:.1f}'.format(n_folds, sum(train_acc_history)/len(train_acc_history)))
     print('Average validation accuracy across the {} folds: {:.1f}'.format(n_folds, sum(valid_acc_history)/len(valid_acc_history)))
