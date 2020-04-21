@@ -4,7 +4,6 @@ from torch.utils.data import TensorDataset
 from torch.utils.data import DataLoader
 from get_dort_graphs import *
 from sklearn.model_selection import KFold
-from sklearn.model_selection import train_test_split
 
 def prep_dataset(ds_name):
     adjacency_matrices, graph_labels, features_matrices, nodes_label = get_dort_graphs(ds_name)
