@@ -92,5 +92,5 @@ def train_GNN(model, folded_train_data, folded_test_data, optimizer, criterion, 
         plt.show()
 
     print('Test accuracy for each fold:')
-    print(test_acc_history)
+    print(*test_acc_history)
     print('Average test accuracy across the {} folds: {:.2f}'.format(n_folds, sum(test_acc_history)/len(test_acc_history)))
