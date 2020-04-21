@@ -48,27 +48,17 @@ def get_folded_data(ds_name, batch_size, n_folds):
     adj, feat, labels, info = prep_dataset(ds_name)
     kf = KFold(n_splits=n_folds, shuffle=True)
     folded_train_data = []
-    folded_valid_data = []
     folded_test_data = []
-    for train_index, test_index in kf.split(adj):
-        adj_tr, adj_va, fea_tr, fea_va, lab_tr, lab_va = train_test_split(adj[train_index],
-                                                                          feat[train_index],
-                                                                          labels[train_index],
-                                                                          test_size=0.2)
 
-        train_fold = TensorDataset(adj_tr, fea_tr, lab_tr)
-        valid_fold = TensorDataset(adj_va, fea_va, lab_va)
+    for train_index, test_index in kf.split(adj):
+        train_fold = TensorDataset(adj[train_index], feat[train_index], labels[train_index])
         test_fold = TensorDataset(adj[test_index], feat[test_index], labels[test_index])
 
         folded_train_data.append(DataLoader(dataset=train_fold,
                                            batch_size=batch_size,
                                            shuffle=True))
 
-        folded_valid_data.append(DataLoader(dataset=valid_fold,
-                                           batch_size=batch_size,
-                                           shuffle=False))
-
         folded_test_data.append(DataLoader(dataset=test_fold,
                                            batch_size=batch_size,
                                            shuffle=False))
-    return folded_train_data, folded_test_data, folded_valid_data, info
+    return folded_train_data, folded_test_data, info
