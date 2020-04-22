@@ -1,9 +1,7 @@
 import numpy as np
 import torch
 from torch.utils.data import TensorDataset
-from torch.utils.data import DataLoader
 from get_dort_graphs import *
-from sklearn.model_selection import KFold
 
 def prep_dataset(ds_name):
     adjacency_matrices, graph_labels, features_matrices, nodes_label = get_dort_graphs(ds_name)
@@ -30,34 +28,7 @@ def prep_dataset(ds_name):
     adjacency_matrices = torch.as_tensor(adjacency_matrices)
     features_matrices = torch.as_tensor(features_matrices)
     graph_labels = torch.as_tensor(graph_labels)
-    return adjacency_matrices, features_matrices, graph_labels, info
 
-def get_folded_data(ds_name, batch_size, n_folds):
-    """
-    Splits data into K-folds for cross-validation
-    inputs:
-    ds_name: String, name of the dataset
-    batch_size: Int,
-    n_folds: Int, number of folds
-    Returns:
-    folded_train_data: A list of dataloaders for each "training data fold"
-    folded_test_data: A list of dataloaders for each "test data fold"
-    info: [max_numbers_of_features, number_of_classes]
-    """
-    adj, feat, labels, info = prep_dataset(ds_name)
-    kf = KFold(n_splits=n_folds, shuffle=True)
-    folded_train_data = []
-    folded_test_data = []
+    dataset = TensorDataset(adjacency_matrices, features_matrices, graph_labels)
 
-    for train_index, test_index in kf.split(adj):
-        train_fold = TensorDataset(adj[train_index], feat[train_index], labels[train_index])
-        test_fold = TensorDataset(adj[test_index], feat[test_index], labels[test_index])
-
-        folded_train_data.append(DataLoader(dataset=train_fold,
-                                           batch_size=batch_size,
-                                           shuffle=True))
-
-        folded_test_data.append(DataLoader(dataset=test_fold,
-                                           batch_size=batch_size,
-                                           shuffle=False))
-    return folded_train_data, folded_test_data, info
+    return dataset, info
