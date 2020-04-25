@@ -8,6 +8,7 @@ from torch.utils.data import DataLoader
 from torch.utils.data import TensorDataset
 from torch.utils.data import Subset
 from sklearn.model_selection import KFold
+import numpy as np
 
 # Setting up the default data type
 use_cuda = torch.cuda.is_available()
@@ -16,7 +17,8 @@ device = torch.device('cuda') if use_cuda else torch.device('cpu')
 dtype = torch.float32
 torch.set_default_tensor_type(FloatTensor)
 
-def train_GNN(model, dataset, optimizer, criterion, num_epochs, batch_size, device, n_folds=10):
+def train_GNN(model, dataset, optimizer, criterion, num_epochs, batch_size, device, 
+             n_folds=10, start_fold=1, save_name='_'):
     def test_GNN(model, test_loader, device):
         model.eval()
         with torch.no_grad():
@@ -31,13 +33,13 @@ def train_GNN(model, dataset, optimizer, criterion, num_epochs, batch_size, devi
                 total += labels.numel()
                 correct += (predicted == labels).sum()
         return 100 * correct / total
-    kf = KFold(n_splits=n_folds, shuffle=True)
+    kf = KFold(n_splits=n_folds, shuffle=True, random_state=300)
     model = model.to(dtype).to(device=device)
     train_history = []
     test_acc_history = []
     init_state = copy.deepcopy(model.state_dict())
     init_state_opt = copy.deepcopy(optimizer.state_dict())
-    for j, (train_index, test_index) in enumerate(kf.split(dataset)):
+    for (j, (train_index, test_index)) in list(enumerate(kf.split(dataset)))[start_fold-1:]:
         # Splitting train and test data
         train = Subset(dataset, train_index)
         test = Subset(dataset, test_index)
@@ -75,8 +77,16 @@ def train_GNN(model, dataset, optimizer, criterion, num_epochs, batch_size, devi
             if (epoch % 10) == 0:
                 print('Fold no. {}, epoch [{}/{}], Loss: {:.4f}, train_acc: {:.2f}'.format(j + 1, epoch, num_epochs, loss, train_log[epoch, 2]))
         train_log = train_log.detach().cpu().numpy()
+        with open('./logs/train_log_{}_split.txt'.format(save_name), "ab") as f:
+            np.savetxt(f, X=train_log, fmt="%d, %1.6e, %1.6e")
+            f.write(b"\n")
+            f.close()
         train_history.append(train_log)
-        test_acc_history.append(test_GNN(model, testloader, device).cpu().numpy())
+        test_acc = test_GNN(model, testloader, device).cpu().numpy()
+        test_acc_history.append(test_acc)
+        with open('./logs/test_log_{}_split.txt'.format(save_name), "ab") as f:
+            np.savetxt(f, X=np.array([j, test_acc]).reshape(1, 2), fmt="%d, %1.4e")
+            f.close()
 
     for i, train_log in enumerate(train_history):
         fig, ax = plot_learning_curves(train_log)
