@@ -14,7 +14,7 @@ import numpy as np
 use_cuda = torch.cuda.is_available()
 FloatTensor = torch.cuda.FloatTensor if use_cuda else torch.FloatTensor
 device = torch.device('cuda') if use_cuda else torch.device('cpu')
-dtype = torch.float32
+dtype = torch.float64
 torch.set_default_tensor_type(FloatTensor)
 
 def train_GNN(model, dataset, optimizer, criterion, num_epochs, batch_size, device, 

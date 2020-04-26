@@ -5,7 +5,7 @@ from torch.nn.utils.rnn import pad_sequence
 import math
 n_inf = -math.inf
 
-dtype = torch.float32
+dtype = torch.float64
 torch.set_default_tensor_type(torch.FloatTensor)
 
 class GraphConvolutionLayer(nn.Module):
