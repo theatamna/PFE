@@ -2,13 +2,13 @@ import copy
 import matplotlib.pyplot as plt
 import torch
 import torch.nn as nn
-import torchvision
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
 from torch.utils.data import TensorDataset
 from torch.utils.data import Subset
 from sklearn.model_selection import KFold
 import numpy as np
+import os
 
 # Setting up the default data type
 use_cuda = torch.cuda.is_available()
@@ -114,3 +114,38 @@ def plot_learning_curves(train_log):
     #ax[1].legend()
 
     return fig, ax
+
+def get_logs(path):
+    files = []
+    test_logs = []
+    train_logs = []
+    GCN_log = ["model_name", "dataset", "learning_rate", "n_epochs", "hidden_dim", "dropout",
+               "Avg", "std", "max"]
+    GIN_log = ["model_name", "dataset", "learning_rate", "n_epochs", "hidden_dim", "dropout",
+               "n_gnn_layers", "n_mlp_layers", "Avg", "std", "max"]
+    # Getting list of files
+    for it in os.listdir(path):
+        if os.path.isfile(os.path.join(path, it)):
+            files.append(it)
+    # Getting test results
+    test_files = list(filter(lambda x: "test" in x, files))
+    train_files = list(filter(lambda x: "train" in x, files))
+    for f in test_files:
+        log = np.loadtxt(os.path.join(path, f), delimiter=',')[:, 1]
+        info = f.split("_")[2:-1]
+        info.extend([np.mean(log), np.std(log), max(log)])
+        if "GCN" in info[0]:
+            log_dict = dict(zip(GCN_log, info))
+        if "GIN" in info[0]:
+            log_dict = dict(zip(GCN_log, info))
+        test_logs.append(log_dict)
+    # Getting training results
+    for f in train_files:
+        log = np.loadtxt(os.path.join(path, f), delimiter=',').reshape(10, -1, 3)
+        info = f.split("_")[2:-1]
+        if "GCN" in info[0]:
+            info_dict = dict(zip(GCN_log[:-3], info))
+        if "GIN" in info[0]:
+            info_dict = dict(zip(GIN_log[:-3], info))
+        train_logs.append((info_dict, log))
+    return test_logs, train_logs
