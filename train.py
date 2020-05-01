@@ -137,15 +137,18 @@ def get_logs(path):
         if "GCN" in info[0]:
             log_dict = dict(zip(GCN_log, info))
         if "GIN" in info[0]:
-            log_dict = dict(zip(GCN_log, info))
+            log_dict = dict(zip(GIN_log, info))
         test_logs.append(log_dict)
     # Getting training results
     for f in train_files:
+        temp = {}
         log = np.loadtxt(os.path.join(path, f), delimiter=',').reshape(10, -1, 3)
         info = f.split("_")[2:-1]
         if "GCN" in info[0]:
             info_dict = dict(zip(GCN_log[:-3], info))
         if "GIN" in info[0]:
             info_dict = dict(zip(GIN_log[:-3], info))
-        train_logs.append((info_dict, log))
+        temp["info_dict"] = info_dict 
+        temp["log"] = log 
+        train_logs.append(temp)
     return test_logs, train_logs
