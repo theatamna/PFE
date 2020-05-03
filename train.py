@@ -53,7 +53,6 @@ def train_GNN(model, dataset, optimizer, criterion, num_epochs, batch_size, devi
         train_log = torch.zeros((num_epochs, 3), dtype=dtype, requires_grad=False)
         for epoch in range(num_epochs):
             model.train()
-            scheduler.step()
             correct = 0
             total = 0
             for i, (Adj, Feat, labels) in enumerate(trainloader):
@@ -73,7 +72,7 @@ def train_GNN(model, dataset, optimizer, criterion, num_epochs, batch_size, devi
                 _, predicted = torch.max(outputs, 1)
                 correct += (predicted == labels).sum()
                 total += labels.numel()
-
+            scheduler.step()
             train_log[epoch, 0] = epoch
             train_log[epoch, 1] = loss.item()
             train_log[epoch, 2] = (100 * correct / total)
