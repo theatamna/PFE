@@ -6,6 +6,7 @@ import torch.nn.functional as F
 from torch.utils.data import DataLoader
 from torch.utils.data import TensorDataset
 from torch.utils.data import Subset
+from torch.optim.lr_scheduler import StepLR
 from sklearn.model_selection import KFold
 import numpy as np
 import os
@@ -18,7 +19,7 @@ dtype = torch.float64
 torch.set_default_tensor_type(FloatTensor)
 
 def train_GNN(model, dataset, optimizer, criterion, num_epochs, batch_size, device, 
-             n_folds=10, start_fold=1, save_name='_'):
+             n_folds=10, start_fold=1, save_name='_', decay_rate=1, decay_every=50):
     def test_GNN(model, test_loader, device):
         model.eval()
         with torch.no_grad():
@@ -33,6 +34,7 @@ def train_GNN(model, dataset, optimizer, criterion, num_epochs, batch_size, devi
                 total += labels.numel()
                 correct += (predicted == labels).sum()
         return 100 * correct / total
+    scheduler = StepLR(optimizer, step_size=decay_every, gamma=decay_rate)
     kf = KFold(n_splits=n_folds, shuffle=True, random_state=300)
     model = model.to(dtype).to(device=device)
     train_history = []
@@ -51,6 +53,7 @@ def train_GNN(model, dataset, optimizer, criterion, num_epochs, batch_size, devi
         train_log = torch.zeros((num_epochs, 3), dtype=dtype, requires_grad=False)
         for epoch in range(num_epochs):
             model.train()
+            scheduler.step()
             correct = 0
             total = 0
             for i, (Adj, Feat, labels) in enumerate(trainloader):
