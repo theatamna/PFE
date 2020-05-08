@@ -7,7 +7,10 @@ def prep_dataset(ds_name):
     adjacency_matrices, graph_labels, features_matrices, nodes_label = get_dort_graphs(ds_name)
     nb_max_nodes = max(a.shape[0] for a in adjacency_matrices) # Max no. of nodes in a single graph
     d_max = max(x.shape[1] for x in features_matrices) # Max no. of features (different from graph to graph only when node features aren't available)
-    n_node_classes = max(max(x) for x in nodes_label) + 1
+    try:
+        n_node_classes = max(max(x) for x in nodes_label) + 1
+    except:
+        n_node_classes = 0
     n_graph_classes = max(graph_labels) + 1
     info = [d_max, n_graph_classes, n_node_classes] # Number of nodes and number of classes
 
