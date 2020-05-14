@@ -33,6 +33,8 @@ class GIN(nn.Module):
         self.output_dim = output_dim
         self.attention = attention
         self.eps = nn.Parameter(torch.zeros(self.n_gnn_layers))
+        self.W = nn.Parameter(torch.zeros(size=(input_dim, input_dim)))
+        nn.init.xavier_normal_(self.W.data, gain=1.414)
 
         # List of MLPs
         self.mlp_layers = torch.nn.ModuleList()
@@ -78,7 +80,10 @@ class GIN(nn.Module):
         return input.reshape(-1, batch_features.shape[2])
 
     def forward(self, batch_graphs, batch_features):
-        inter_out = batch_features
+        if self.attention:
+            inter_out = self.W * batch_features
+        else:
+            inter_out = batch_features
         layer_scores = torch.empty((self.n_gnn_layers,
                                     batch_graphs.shape[0]*batch_graphs.shape[1],
                                     self.output_dim))
