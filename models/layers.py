@@ -3,7 +3,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.nn.utils.rnn import pad_sequence
 import math
-n_inf = -math.inf
 
 dtype = torch.float64
 torch.set_default_tensor_type(torch.FloatTensor)
@@ -86,13 +85,8 @@ class attention_layer(nn.Module):
 
         concat_features = self.node_neighbors_features(batch_graphs, batch_features)
         scores = self.LeakyRelu(torch.mm(concat_features, self.a))
-
-        # Split the output: each chunk contains attention coefficients for a single node
-        degrees = batch_graphs.sum(dim=2).flatten().to(torch.int)
-        scores = torch.split(scores, split_size_or_sections=degrees.tolist(), dim=0)
-        scores = pad_sequence(scores, batch_first=True, padding_value=n_inf)
-        scores = F.softmax(scores).flatten()
-        scores = scores[scores>0]
         attention_scores.masked_scatter_(batch_graphs.to(torch.bool), scores)
+        attention_scores[attention_scores==0] = -9e15
+        attention_scores = F.softmax(attention_scores, dim=2)
 
         return attention_scores
