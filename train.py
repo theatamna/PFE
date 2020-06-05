@@ -55,6 +55,7 @@ def train_GNN(model, dataset, optimizer, criterion, num_epochs, batch_size, devi
             model.train()
             correct = 0
             total = 0
+            train_loss = 0
             for i, (Adj, Feat, labels) in enumerate(trainloader):
                 Adj = Adj.to(dtype).to(device=device)
                 Feat = Feat.to(dtype).to(device=device)
@@ -72,9 +73,10 @@ def train_GNN(model, dataset, optimizer, criterion, num_epochs, batch_size, devi
                 _, predicted = torch.max(outputs, 1)
                 correct += (predicted == labels).sum()
                 total += labels.numel()
+                train_loss += loss.item()*Adj.shape[0] 
             scheduler.step()
             train_log[epoch, 0] = epoch
-            train_log[epoch, 1] = loss.item()
+            train_log[epoch, 1] = train_loss / len(trainloader.dataset)
             train_log[epoch, 2] = (100 * correct / total)
             if (epoch % 10) == 0:
                 print('Fold no. {}, epoch [{}/{}], Loss: {:.4f}, train_acc: {:.2f}'.format(j + 1, epoch, num_epochs, loss, train_log[epoch, 2]))
@@ -144,7 +146,7 @@ def get_logs(path):
     # Getting training results
     for f in train_files:
         temp = {}
-        log = np.loadtxt(os.path.join(path, f), delimiter=',').reshape(10, -1, 3)
+        log = np.loadtxt(os.path.join(path, f), delimiter=',').reshape(5, -1, 3)
         info = f.split("_")[2:-1]
         if "GCN" in info[0]:
             info_dict = dict(zip(GCN_log[:-3], info))
