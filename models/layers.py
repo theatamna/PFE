@@ -4,6 +4,7 @@ import torch.nn.functional as F
 from torch.nn.utils.rnn import pad_sequence
 import math
 
+n_inf = -9e15
 dtype = torch.float64
 torch.set_default_tensor_type(torch.FloatTensor)
 
@@ -49,7 +50,7 @@ class MLP(nn.Module):
 
 class attention_layer(nn.Module):
 
-    def __init__(self, in_features, alpha=0.2, dropout=0):
+    def __init__(self, in_features, alpha=0.2, dropout=0.6):
         super(attention_layer, self).__init__()
         self.in_features = in_features
         self.alpha = alpha
@@ -59,6 +60,9 @@ class attention_layer(nn.Module):
 
         self.a = nn.Parameter(torch.zeros((2*in_features, 1)))
         nn.init.xavier_uniform_(self.a.data, gain=gain)
+        
+        self.W = nn.Parameter(torch.zeros((in_features, in_features)))
+        nn.init.xavier_uniform_(self.W.data, gain=gain)
 
         self.LeakyRelu = nn.LeakyReLU(alpha)
 
@@ -82,11 +86,13 @@ class attention_layer(nn.Module):
     def forward(self, batch_graphs, batch_features):
         batch_size, n_nodes, _ = batch_graphs.shape
         attention_scores = torch.zeros_like(batch_graphs)
-
+        #mod_features = torch.mm(batch_features.reshape(batch_features.shape[0]*batch_features.shape[1],-1),
+        #                         self.W).reshape(batch_features.shape)
         concat_features = self.node_neighbors_features(batch_graphs, batch_features)
         scores = self.LeakyRelu(torch.mm(concat_features, self.a))
         attention_scores.masked_scatter_(batch_graphs.to(torch.bool), scores)
-        attention_scores[attention_scores==0] = -9e15
-        attention_scores = F.softmax(attention_scores, dim=2)
+        attention_scores[attention_scores==0] = n_inf
+        attention_scores = F.dropout(F.softmax(attention_scores, dim=2), self.dropout)
+
 
         return attention_scores

@@ -35,7 +35,7 @@ def train_GNN(model, dataset, optimizer, criterion, num_epochs, batch_size, devi
                 correct += (predicted == labels).sum()
         return 100 * correct / total
     scheduler = StepLR(optimizer, step_size=decay_every, gamma=decay_rate)
-    kf = KFold(n_splits=n_folds, shuffle=True, random_state=300)
+    kf = KFold(n_splits=n_folds, shuffle=True)
     model = model.to(dtype).to(device=device)
     train_history = []
     test_acc_history = []
